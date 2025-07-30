@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useNotifications } from '@/hooks/useNotificationsHook'
-import { useSocket, useSocketEvents } from '@/hooks/useSocket'
+
 import { INotification } from '@/models/Notification'
 import LoadingSpinner from './LoadingSpinner'
 
@@ -18,37 +18,39 @@ const NotificationIcon: React.FC<NotificationIconProps> = ({ userId, className =
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead, fetchNotifications, addNotification } = useNotifications(userId)
   
-  // Socket.io integration for real-time notifications
-  const { socket, isConnected, joinUserRoom } = useSocket(userId || undefined)
-  const { newNotification } = useSocketEvents(socket)
+  // Supabase Realtime integration for real-time notifications
   
   // Handle individual new notification for immediate updates (avoiding duplicates)
   useEffect(() => {
-    if (newNotification && userId && newNotification.type !== 'message') {
-      const notification: INotification = {
-        _id: newNotification._id || `socket_${Date.now()}`,
-        title: newNotification.title || 'Thông báo mới',
-        message: newNotification.message || 'Bạn có thông báo mới',
-        type: newNotification.type || 'info',
-        category: newNotification.category || 'system',
-        isRead: false,
-        actionUrl: newNotification.actionUrl,
-        actionText: newNotification.actionText,
-        createdAt: newNotification.createdAt || new Date(),
-        updatedAt: newNotification.updatedAt || new Date(),
-        userId: userId,
-        metadata: newNotification.metadata || {}
+    const handleNewNotification = (event: CustomEvent) => {
+      const newNotification = event.detail
+      if (newNotification && userId && newNotification.type !== 'message') {
+        const notification: INotification = {
+          _id: newNotification._id || `realtime_${Date.now()}`,
+          title: newNotification.title || 'Thông báo mới',
+          message: newNotification.message || 'Bạn có thông báo mới',
+          type: newNotification.type || 'info',
+          category: newNotification.category || 'system',
+          isRead: false,
+          actionUrl: newNotification.actionUrl,
+          actionText: newNotification.actionText,
+          createdAt: newNotification.createdAt || new Date(),
+          updatedAt: newNotification.updatedAt || new Date(),
+          userId: userId,
+          metadata: newNotification.metadata || {}
+        }
+        addNotification(notification)
       }
-      addNotification(notification)
     }
-  }, [newNotification, userId, addNotification])
 
-  // Join user room when connected
-  useEffect(() => {
-    if (isConnected && userId) {
-      joinUserRoom(userId)
+    window.addEventListener('new-notification', handleNewNotification as EventListener)
+    
+    return () => {
+      window.removeEventListener('new-notification', handleNewNotification as EventListener)
     }
-  }, [isConnected, userId, joinUserRoom])
+  }, [userId, addNotification])
+
+  // Note: User room joining is now handled by Supabase Realtime automatically
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -149,9 +151,7 @@ const NotificationIcon: React.FC<NotificationIconProps> = ({ userId, className =
         
         {/* Real-time Connection Indicator */}
         {realtimeEnabled && (
-          <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-            isConnected ? 'bg-green-500' : 'bg-gray-400'
-          }`} title={`Thông báo thời gian thực: ${isConnected ? 'Đã kết nối' : 'Ngắt kết nối'}`} />
+          <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white bg-green-500" title="Thông báo thời gian thực: Đã kết nối" />
         )}
       </button>
 

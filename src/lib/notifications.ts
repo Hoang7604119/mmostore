@@ -253,10 +253,15 @@ export async function sendNotification(
     const notification = new Notification(notificationData)
     await notification.save()
     
-    // Send real-time notification via Socket.io
-    if (global.io) {
-      try {
-        global.io.to(`user-${userId}`).emit('new-notification', {
+    // Send real-time notification via Supabase Realtime
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const channel = supabase.channel(`user-${userId}`)
+      
+      await channel.send({
+        type: 'broadcast',
+        event: 'new-notification',
+        payload: {
           _id: notification._id,
           title: notification.title,
           message: notification.message,
@@ -267,10 +272,10 @@ export async function sendNotification(
           actionText: notification.actionText,
           createdAt: notification.createdAt,
           metadata: notification.metadata
-        })
-      } catch (error) {
-        console.error('Failed to send Socket.io notification:', error)
-      }
+        }
+      })
+    } catch (error) {
+      console.error('Failed to send Supabase Realtime notification:', error)
     }
     
     return {
@@ -303,27 +308,35 @@ export async function sendBulkNotification(
     
     const result = await Notification.insertMany(notifications)
     
-    // Send real-time notifications via Socket.io for each created notification
-    if (global.io && result.length > 0) {
+    // Send real-time notifications via Supabase Realtime for each created notification
+    if (result.length > 0) {
       try {
-        result.forEach(notification => {
+        const { supabase } = await import('@/lib/supabase')
+        
+        for (const notification of result) {
           const userId = notification.userId
-          global.io.to(`user-${userId}`).emit('new-notification', {
-            _id: notification._id,
-            title: notification.title,
-            message: notification.message,
-            type: notification.type,
-            category: notification.category,
-            isRead: notification.isRead,
-            actionUrl: notification.actionUrl,
-            actionText: notification.actionText,
-            createdAt: notification.createdAt,
-            metadata: notification.metadata
+          const channel = supabase.channel(`user-${userId}`)
+          
+          await channel.send({
+            type: 'broadcast',
+            event: 'new-notification',
+            payload: {
+              _id: notification._id,
+              title: notification.title,
+              message: notification.message,
+              type: notification.type,
+              category: notification.category,
+              isRead: notification.isRead,
+              actionUrl: notification.actionUrl,
+              actionText: notification.actionText,
+              createdAt: notification.createdAt,
+              metadata: notification.metadata
+            }
           })
-        })
-        console.log(`Socket.io bulk notifications sent for ${result.length} notifications`)
-      } catch (socketError) {
-        console.error('Failed to send Socket.io bulk notifications:', socketError)
+        }
+        console.log(`Supabase Realtime bulk notifications sent for ${result.length} notifications`)
+      } catch (realtimeError) {
+        console.error('Failed to send Supabase Realtime bulk notifications:', realtimeError)
       }
     }
     

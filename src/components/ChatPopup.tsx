@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useMessagesContext } from '@/contexts/MessagesContext'
 import { type Conversation, type Message } from '@/hooks/useMessages'
 import { useAuth } from '@/hooks/useAuth'
-import { useSocket, useSocketEvents } from '@/hooks/useSocket'
+
 import { MessageCircle, X, Send, Minimize2, Maximize2 } from 'lucide-react'
 import MessageFileUpload from './MessageFileUpload'
 import MessageAttachment from './MessageAttachment'
@@ -23,8 +23,7 @@ export default function ChatPopup() {
   
   const { user } = useAuth()
   const { conversations, setConversations, messages, setMessages, totalUnread, loading, sendMessageToConversation, fetchMessages, fetchConversations, updateConversationFromMessage, updateConversationReadStatus } = useMessagesContext()
-  const { socket, isConnected, joinConversation, leaveConversation } = useSocket(user?._id)
-  const { newMessage: socketNewMessage, clearNewMessage } = useSocketEvents(socket)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const currentConversationRef = useRef<string | null>(null)
 
@@ -36,28 +35,34 @@ export default function ChatPopup() {
     scrollToBottom()
   }, [messages])
 
-  // Handle new socket messages
+  // Handle new messages from Supabase Realtime
   useEffect(() => {
-    if (socketNewMessage && user) {
-      // Use the shared updateConversationFromMessage function
-      updateConversationFromMessage(socketNewMessage, user._id)
-      
-      // If message belongs to current conversation, add to messages (only for received messages)
-      if (selectedConversation && 
-          socketNewMessage.conversationId === selectedConversation &&
-          socketNewMessage.senderId._id !== user._id) {
-        // Check if message is not already in the list (avoid duplicates)
-        const messageExists = messages.some(msg => msg._id === socketNewMessage._id)
-        if (!messageExists) {
-          setMessages(prev => [...prev, socketNewMessage])
-          scrollToBottom()
+    const handleNewMessage = (event: CustomEvent) => {
+      const newMessage = event.detail
+      if (newMessage && user) {
+        // Use the shared updateConversationFromMessage function
+        updateConversationFromMessage(newMessage, user._id)
+        
+        // If message belongs to current conversation, add to messages (only for received messages)
+        if (selectedConversation && 
+            newMessage.conversationId === selectedConversation &&
+            newMessage.senderId._id !== user._id) {
+          // Check if message is not already in the list (avoid duplicates)
+          const messageExists = messages.some(msg => msg._id === newMessage._id)
+          if (!messageExists) {
+            setMessages(prev => [...prev, newMessage])
+            scrollToBottom()
+          }
         }
       }
-      
-      // Clear the socket message after processing
-      clearNewMessage()
     }
-  }, [socketNewMessage, selectedConversation, messages, clearNewMessage, user, updateConversationFromMessage, setMessages])
+
+    window.addEventListener('new-message', handleNewMessage as EventListener)
+    
+    return () => {
+      window.removeEventListener('new-message', handleNewMessage as EventListener)
+    }
+  }, [selectedConversation, messages, user, updateConversationFromMessage, setMessages])
 
   useEffect(() => {
     if (selectedConversation) {
@@ -66,56 +71,44 @@ export default function ChatPopup() {
     }
   }, [selectedConversation, fetchMessages])
 
-  // Handle message read updates from Socket.io
+  // Handle message read updates from Supabase Realtime
   useEffect(() => {
-    if (socket) {
-      const handleMessageReadUpdate = (data: any) => {
-        console.log('ChatPopup: Received message-read-update:', data)
-        // Update conversation read status immediately for better UX
-        if (data.conversationId && data.readByUserId) {
-          updateConversationReadStatus(data.conversationId, data.readByUserId)
-        }
-        // Refresh conversations to update unread counts
-        fetchConversations()
-        
-        // If the read update is for current conversation, refresh messages
-        if (selectedConversation && data.conversationId === selectedConversation) {
-          fetchMessages(selectedConversation)
-        }
+    const handleMessageReadUpdate = (event: CustomEvent) => {
+      const data = event.detail
+      console.log('ChatPopup: Received message-read-update:', data)
+      // Update conversation read status immediately for better UX
+      if (data.conversationId && data.readByUserId) {
+        updateConversationReadStatus(data.conversationId, data.readByUserId)
       }
-
-      socket.on('message-read-update', handleMessageReadUpdate)
+      // Refresh conversations to update unread counts
+      fetchConversations()
       
-      return () => {
-        socket.off('message-read-update', handleMessageReadUpdate)
+      // If the read update is for current conversation, refresh messages
+      if (selectedConversation && data.conversationId === selectedConversation) {
+        fetchMessages(selectedConversation)
       }
     }
-  }, [socket, fetchConversations, fetchMessages, selectedConversation])
+
+    window.addEventListener('message-read-update', handleMessageReadUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('message-read-update', handleMessageReadUpdate as EventListener)
+    }
+  }, [fetchConversations, fetchMessages, selectedConversation, updateConversationReadStatus])
   
-  // Separate useEffect for socket room management
+  // Handle conversation selection
   useEffect(() => {
-    if (selectedConversation && isConnected) {
-      // Only join if it's a different conversation
-      if (currentConversationRef.current !== selectedConversation) {
-        // Leave previous conversation if exists
-        if (currentConversationRef.current) {
-          leaveConversation(currentConversationRef.current)
-        }
-        
-        // Join new conversation
-        joinConversation(selectedConversation)
-        currentConversationRef.current = selectedConversation
-      }
+    if (selectedConversation) {
+      currentConversationRef.current = selectedConversation
     }
     
     // Cleanup when component unmounts or conversation is cleared
     return () => {
       if (currentConversationRef.current && !selectedConversation) {
-        leaveConversation(currentConversationRef.current)
         currentConversationRef.current = null
       }
     }
-  }, [selectedConversation, isConnected, joinConversation, leaveConversation])
+  }, [selectedConversation])
 
   const handleSendMessage = async () => {
     if ((!newMessage.trim() && !pendingAttachment) || !selectedConversation) return
@@ -268,11 +261,6 @@ export default function ChatPopup() {
               </button>
               <button
                 onClick={() => {
-                  // Leave current conversation when closing popup
-                  if (currentConversationRef.current) {
-                    leaveConversation(currentConversationRef.current)
-                    currentConversationRef.current = null
-                  }
                   setIsOpen(false)
                 }}
                 className="hover:bg-white/20 p-2 rounded-xl transition-all duration-200 hover:scale-110"
@@ -383,11 +371,6 @@ export default function ChatPopup() {
                   <div className="p-4 pb-2 border-b border-gray-200/50">
                     <button
                       onClick={() => {
-                        // Leave current conversation when going back to list
-                        if (currentConversationRef.current) {
-                          leaveConversation(currentConversationRef.current)
-                          currentConversationRef.current = null
-                        }
                         setSelectedConversation(null)
                       }}
                       className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:bg-blue-50 px-3 py-2 rounded-lg transition-all duration-200"

@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { MessageCircle, Send, User, Loader2 } from 'lucide-react'
 import { useMessagesContext } from '@/contexts/MessagesContext'
-import { useSocket, useSocketEvents } from '@/hooks/useSocket'
 import LoadingSpinner from './LoadingSpinner'
 
 interface MessageIconProps {
@@ -19,48 +18,25 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { conversations, totalUnread, loading, error, fetchConversations, updateConversationReadStatus } = useMessagesContext()
   
-  // Socket.io integration for real-time updates
-  const { socket, isConnected, joinUserRoom } = useSocket(userId || undefined)
-  const { newMessage, notifications, clearNewMessage } = useSocketEvents(socket)
-
-  // Handle real-time message updates - MessageIcon only displays, doesn't process
+  // Handle message read updates from Supabase Realtime
   useEffect(() => {
-    if (newMessage && userId) {
-      // MessageIcon should not process messages, only display the count
-      // The actual processing is handled by ChatPopup or MessagesPage
-      
-      // Clear the socket message after processing to prepare for next one
-      clearNewMessage()
-    }
-  }, [newMessage, userId, clearNewMessage])
-
-  // Handle message read updates from Socket.io
-  useEffect(() => {
-    if (socket) {
-      const handleMessageReadUpdate = (data: any) => {
-        console.log('MessageIcon: Received message-read-update:', data)
-        // Update conversation read status immediately for better UX
-        if (data.conversationId && data.readByUserId) {
-          updateConversationReadStatus(data.conversationId, data.readByUserId)
-        }
-        // Also refresh conversations to ensure data consistency
-        fetchConversations()
+    const handleMessageReadUpdate = (event: CustomEvent) => {
+      const data = event.detail
+      console.log('MessageIcon: Received message-read-update:', data)
+      // Update conversation read status immediately for better UX
+      if (data.conversationId && data.readByUserId) {
+        updateConversationReadStatus(data.conversationId, data.readByUserId)
       }
-
-      socket.on('message-read-update', handleMessageReadUpdate)
-      
-      return () => {
-        socket.off('message-read-update', handleMessageReadUpdate)
-      }
+      // Also refresh conversations to ensure data consistency
+      fetchConversations()
     }
-  }, [socket, fetchConversations])
 
-  // Join user room when connected
-  useEffect(() => {
-    if (isConnected && userId) {
-      joinUserRoom(userId)
+    window.addEventListener('message-read-update', handleMessageReadUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('message-read-update', handleMessageReadUpdate as EventListener)
     }
-  }, [isConnected, userId, joinUserRoom])
+  }, [fetchConversations, updateConversationReadStatus])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -121,10 +97,8 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
           </span>
         )}
         
-        {/* Real-time Connection Indicator */}
-        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-          isConnected ? 'bg-green-500' : 'bg-gray-400'
-        }`} title={`Tin nhắn thời gian thực: ${isConnected ? 'Đã kết nối' : 'Ngắt kết nối'}`} />
+        {/* Real-time Connection Indicator - Always connected with Supabase */}
+        <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white bg-green-500" title="Tin nhắn thời gian thực: Đã kết nối" />
       </button>
 
       {/* Dropdown Menu */}

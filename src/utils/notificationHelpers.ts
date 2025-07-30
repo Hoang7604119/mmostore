@@ -626,10 +626,15 @@ export const createNotification = async (userId: string, message: string, type: 
     
     await notification.save()
     
-    // Send real-time notification via Socket.io
-    if (global.io) {
-      try {
-        global.io.to(`user-${userId}`).emit('new-notification', {
+    // Send real-time notification via Supabase Realtime
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const channel = supabase.channel(`user-${userId}`)
+      
+      await channel.send({
+        type: 'broadcast',
+        event: 'new-notification',
+        payload: {
           _id: notification._id,
           title: notification.title,
           message: notification.message,
@@ -640,10 +645,10 @@ export const createNotification = async (userId: string, message: string, type: 
           actionText: notification.actionText,
           createdAt: notification.createdAt,
           metadata: notification.metadata
-        })
-      } catch (error) {
-        console.error('Failed to send Socket.io notification:', error)
-      }
+        }
+      })
+    } catch (error) {
+      console.error('Failed to send Supabase Realtime notification:', error)
     }
     
     return {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useMessagesContext } from '@/contexts/MessagesContext'
 import { type Message, type Conversation } from '@/hooks/useMessages'
-import { useSocket, useSocketEvents } from '@/hooks/useSocket'
+
 import { MessageCircle, Send, ArrowLeft, User, Loader2, RefreshCw, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
@@ -33,23 +33,7 @@ const MessagesPage: React.FC = () => {
     forceRefresh 
   } = useMessagesContext()
   
-  // Socket.io integration
-  const { 
-    socket, 
-    isConnected, 
-    joinConversation, 
-    leaveConversation, 
-    sendMessage: sendSocketMessage,
-    sendTypingStart,
-    sendTypingStop 
-  } = useSocket(user?._id)
-  
-  const { 
-    newMessage: socketNewMessage, 
-    typingUsers, 
-    notifications,
-    clearNewMessage 
-  } = useSocketEvents(socket)
+  // Supabase Realtime integration
   
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -98,43 +82,44 @@ const MessagesPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // Handle new socket messages
+  // Handle new messages from Supabase Realtime
   useEffect(() => {
-    if (socketNewMessage && user) {
-      // Use the shared updateConversationFromMessage function
-      updateConversationFromMessage(socketNewMessage, user._id)
-      
-      // If message belongs to current conversation, add to messages (only for received messages)
-      if (selectedConversation && 
-          socketNewMessage.conversationId === selectedConversation.conversationId &&
-          socketNewMessage.senderId._id !== user._id) {
-        // Check if message is not already in the list (avoid duplicates)
-        const messageExists = messages.some(msg => msg._id === socketNewMessage._id)
-        if (!messageExists) {
-          setMessages(prev => [...prev, socketNewMessage])
-          scrollToBottom()
+    const handleNewMessage = (event: CustomEvent) => {
+      const newMessage = event.detail
+      if (newMessage && user) {
+        // Use the shared updateConversationFromMessage function
+        updateConversationFromMessage(newMessage, user._id)
+        
+        // If message belongs to current conversation, add to messages (only for received messages)
+        if (selectedConversation && 
+            newMessage.conversationId === selectedConversation.conversationId &&
+            newMessage.senderId._id !== user._id) {
+          // Check if message is not already in the list (avoid duplicates)
+          const messageExists = messages.some(msg => msg._id === newMessage._id)
+          if (!messageExists) {
+            setMessages(prev => [...prev, newMessage])
+            scrollToBottom()
+          }
         }
       }
-      
-      // Clear the socket message after processing
-      clearNewMessage()
     }
-  }, [socketNewMessage, selectedConversation, messages, clearNewMessage, user, updateConversationFromMessage])
+
+    window.addEventListener('new-message', handleNewMessage as EventListener)
+    
+    return () => {
+      window.removeEventListener('new-message', handleNewMessage as EventListener)
+    }
+  }, [selectedConversation, messages, user, updateConversationFromMessage])
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
-  // Join/leave conversation rooms when selection changes
+  // Channel management for Supabase Realtime
   useEffect(() => {
-    if (selectedConversation && isConnected) {
-      joinConversation(selectedConversation.conversationId)
-      
-      return () => {
-        leaveConversation(selectedConversation.conversationId)
-      }
-    }
-  }, [selectedConversation?.conversationId, isConnected])
+    // Supabase Realtime channels are managed globally
+    // No need for manual join/leave operations
+  }, [selectedConversation?.conversationId])
 
   // Load messages when conversation is selected
   const handleSelectConversation = async (conversation: Conversation) => {
@@ -154,30 +139,8 @@ const MessagesPage: React.FC = () => {
     }
   }
 
-  // Typing indicator state
-  const [isTyping, setIsTyping] = useState(false)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Handle typing indicators
-  const handleTypingStart = () => {
-    if (!isTyping && selectedConversation && user) {
-      setIsTyping(true)
-      sendTypingStart(selectedConversation.conversationId)
-    }
-    
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-    
-    // Set new timeout to stop typing
-    typingTimeoutRef.current = setTimeout(() => {
-      if (isTyping && selectedConversation && user) {
-        setIsTyping(false)
-        sendTypingStop(selectedConversation.conversationId)
-      }
-    }, 2000)
-  }
+  // Typing indicators removed for Supabase Realtime migration
+  // Can be re-implemented later if needed
 
   const handleFileSelect = (file: File, type: 'image' | 'file') => {
     setIsUploading(true)
@@ -202,14 +165,7 @@ const MessagesPage: React.FC = () => {
 
     setSendingMessage(true)
     
-    // Stop typing indicator
-    if (isTyping && user) {
-      setIsTyping(false)
-      sendTypingStop(selectedConversation.conversationId)
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current)
-      }
-    }
+    // Typing indicators removed for Supabase Realtime migration
     
     try {
       const messageContent = newMessage.trim() || (pendingAttachment ? `[${pendingAttachment.type === 'image' ? 'Hình ảnh' : 'File'}]` : '')
@@ -455,17 +411,7 @@ const MessagesPage: React.FC = () => {
                         </div>
                       </div>
                       
-                      {/* Connection Status */}
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full shadow-sm ${
-                          isConnected ? 'bg-gradient-to-r from-green-400 to-green-500 animate-pulse' : 'bg-gradient-to-r from-red-400 to-red-500'
-                        }`}></div>
-                        <span className={`text-xs font-medium ${
-                          isConnected ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {isConnected ? 'Đã kết nối' : 'Mất kết nối'}
-                        </span>
-                      </div>
+                      {/* Real-time messaging is now handled by Supabase */}
                     </div>
                   </div>
 
@@ -520,23 +466,7 @@ const MessagesPage: React.FC = () => {
                       })
                     )}
                     
-                    {/* Typing indicators */}
-                    {Object.keys(typingUsers).length > 0 && (
-                      <div className="flex justify-start">
-                        <div className="bg-white border border-gray-200/50 text-gray-800 px-4 py-3 rounded-2xl shadow-sm backdrop-blur-sm">
-                          <div className="flex items-center space-x-1">
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                            </div>
-                            <span className="text-xs ml-2 font-medium">
-                              {Object.values(typingUsers)[0]} đang nhập...
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* Typing indicators removed for Supabase Realtime migration */}
                     
                     <div ref={messagesEndRef} />
                   </div>
@@ -580,7 +510,6 @@ const MessagesPage: React.FC = () => {
                             value={newMessage}
                             onChange={(e) => {
                               setNewMessage(e.target.value)
-                              handleTypingStart()
                             }}
                             onKeyPress={handleKeyPress}
                             placeholder="Nhập tin nhắn..."
