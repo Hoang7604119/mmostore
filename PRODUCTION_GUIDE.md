@@ -233,13 +233,13 @@ pm2 start ecosystem.config.js
 ```nginx
 server {
     listen 80;
-    server_name yourdomain.com;
+    server_name mmostore.site;
     return 301 https://$server_name$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name yourdomain.com;
+    server_name mmostore.site;
     
     ssl_certificate /path/to/certificate.crt;
     ssl_certificate_key /path/to/private.key;
@@ -343,9 +343,9 @@ export async function GET() {
 ## 📞 Support & Contact
 
 For technical support or deployment assistance:
-- Email: support@yourdomain.com
-- Documentation: https://docs.yourdomain.com
-- Issue Tracker: https://github.com/yourrepo/issues
+- Email: support@mmostore.site
+- Documentation: https://docs.mmostore.site
+- Issue Tracker: https://github.com/Hoang7604119/mmostore/issues
 
 ---
 
