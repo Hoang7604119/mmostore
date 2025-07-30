@@ -405,7 +405,7 @@ export default function MarketplacePage() {
                         <div className="relative">
                           {type.imageBase64 || type.image ? (
                             <img 
-                              src={type.imageBase64 || type.image} 
+                              src={type.imageBase64 || (type.image ? `/api/images${type.image.replace('/uploads', '')}` : type.image)} 
                               alt={type.displayName}
                               className="w-20 h-20 object-cover rounded-2xl shadow-lg group-hover:shadow-xl transition-shadow duration-300"
                               onError={(e) => {
@@ -656,7 +656,7 @@ export default function MarketplacePage() {
                                   />
                                 ) : typeInfo?.image ? (
                                   <img 
-                                    src={typeInfo.image} 
+                                    src={`/api/images${typeInfo.image.replace('/uploads', '')}`} 
                                     alt={typeInfo?.displayName || product.type}
                                     className="w-10 h-10 object-cover rounded-xl shadow-md"
                                     onError={(e) => {
@@ -805,7 +805,7 @@ export default function MarketplacePage() {
                                 <div className="flex items-center space-x-2 mb-2">
                                   {typeInfo?.imageBase64 || typeInfo?.image ? (
                                     <img 
-                                      src={typeInfo.imageBase64 || typeInfo.image} 
+                                      src={typeInfo.imageBase64 || (typeInfo.image ? `/api/images${typeInfo.image.replace('/uploads', '')}` : typeInfo.image)} 
                                       alt={typeInfo?.displayName || product.type}
                                       className="w-6 h-6 object-cover rounded"
                                       onError={(e) => {
@@ -1059,7 +1059,7 @@ export default function MarketplacePage() {
                   ) : productType?.image ? (
                     <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-gray-100">
                       <img
-                        src={productType.image}
+                        src={`/api/images${productType.image.replace('/uploads', '')}`}
                         alt={productType.displayName}
                         className="w-12 h-12 object-contain"
                       />

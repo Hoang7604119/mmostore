@@ -376,7 +376,7 @@ export default function AdminProductTypesPage() {
                     />
                     <div className="mt-2">
                       <img 
-                        src={formData.image || '/api/placeholder-image'} 
+                        src={formData.image ? `/api/images${formData.image.replace('/uploads', '')}` : '/api/placeholder-image'} 
                         alt="Preview" 
                         className="w-16 h-16 object-cover rounded border"
                         onError={(e) => {
@@ -482,7 +482,7 @@ export default function AdminProductTypesPage() {
                         />
                       ) : productType.image ? (
                         <img 
-                          src={productType.image} 
+                          src={`/api/images${productType.image.replace('/uploads', '')}`}
                           alt={productType.displayName}
                           className="w-10 h-10 object-cover rounded mr-3"
                           onError={(e) => {
