@@ -33,15 +33,22 @@ export const useSocket = (userId?: string): SocketContextType => {
     const initSocket = () => {
       try {
         // Connect to Socket.io server
-        const socketInstance = io(process.env.NODE_ENV === 'production' 
-          ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-          : 'http://localhost:3000', {
-          transports: ['websocket', 'polling'],
+        const socketUrl = process.env.NODE_ENV === 'production' 
+          ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
+          : 'http://localhost:3000'
+        
+        console.log('Connecting to Socket.IO server:', socketUrl)
+        
+        const socketInstance = io(socketUrl, {
+          transports: ['polling', 'websocket'], // Try polling first for better compatibility
           autoConnect: true,
           reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000,
-          timeout: 20000
+          reconnectionAttempts: 10,
+          reconnectionDelay: 2000,
+          reconnectionDelayMax: 10000,
+          timeout: 30000,
+          forceNew: false,
+          upgrade: true
         })
 
         socketInstance.on('connect', () => {
