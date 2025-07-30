@@ -17,6 +17,7 @@ import {
 import { UserData } from '@/types/user'
 import Header from '@/components/Header'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { getProductTypeImage, hasValidImage, getFallbackDisplay } from '@/lib/imageUtils'
 
 
 
@@ -27,7 +28,9 @@ interface ProductType {
   icon: string
   color: string
   image?: string
+  imageUrl?: string
   imageBase64?: string
+  finalImageUrl?: string
   description?: string
   isActive: boolean
   order: number
@@ -40,6 +43,7 @@ interface ProductTypeForm {
   displayName: string
   color: string
   image: string
+  imageUrl: string
   description: string
   order: number
 }
@@ -56,6 +60,7 @@ export default function AdminProductTypesPage() {
     displayName: '',
     color: '#3B82F6',
     image: '',
+    imageUrl: '',
     description: '',
     order: 0
   })
@@ -111,22 +116,45 @@ export default function AdminProductTypesPage() {
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', file)
+      uploadFormData.append('fileName', `product-type-${formData.name || Date.now()}.${file.name.split('.').pop()}`)
 
-      const response = await fetch('/api/upload', {
+      // Try Supabase Storage first
+      const response = await fetch('/api/upload/supabase', {
         method: 'POST',
         credentials: 'include',
-        body: formData
+        body: uploadFormData
       })
 
       if (response.ok) {
         const data = await response.json()
-        setFormData(prev => ({ ...prev, image: data.url }))
+        setFormData(prev => ({ 
+          ...prev, 
+          imageUrl: data.url,
+          image: '' // Clear legacy image field
+        }))
         alert('Upload ảnh thành công!')
       } else {
-        const errorData = await response.json()
-        alert(`Lỗi upload: ${errorData.error}`)
+        // Fallback to legacy upload
+        const legacyResponse = await fetch('/api/upload', {
+          method: 'POST',
+          credentials: 'include',
+          body: uploadFormData
+        })
+        
+        if (legacyResponse.ok) {
+          const data = await legacyResponse.json()
+          setFormData(prev => ({ 
+            ...prev, 
+            image: data.url,
+            imageUrl: '' // Clear Supabase field
+          }))
+          alert('Upload ảnh thành công (legacy)!')
+        } else {
+          const errorData = await response.json()
+          alert(`Lỗi upload: ${errorData.error}`)
+        }
       }
     } catch (error) {
       console.error('Upload error:', error)
@@ -180,6 +208,7 @@ export default function AdminProductTypesPage() {
       displayName: productType.displayName,
       color: productType.color,
       image: productType.image || '',
+      imageUrl: productType.imageUrl || '',
       description: productType.description || '',
       order: productType.order
     })
@@ -248,6 +277,7 @@ export default function AdminProductTypesPage() {
       displayName: '',
       color: '#3B82F6',
       image: '',
+      imageUrl: '',
       description: '',
       order: 0
     })
@@ -369,30 +399,46 @@ export default function AdminProductTypesPage() {
                      )}
                     <input
                       type="text"
-                      value={formData.image}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                      value={formData.imageUrl}
+                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value, image: '' })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Hoặc nhập đường dẫn ảnh..."
+                      placeholder="Hoặc nhập URL ảnh Supabase..."
+                    />
+                    <input
+                      type="text"
+                      value={formData.image}
+                      onChange={(e) => setFormData({ ...formData, image: e.target.value, imageUrl: '' })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Hoặc nhập đường dẫn ảnh legacy..."
                     />
                     <div className="mt-2">
-                      <img 
-                        src={formData.image ? `/api/images${formData.image.replace('/uploads', '')}` : '/api/placeholder-image'} 
-                        alt="Preview" 
-                        className="w-16 h-16 object-cover rounded border"
-                        onError={(e) => {
-                          // Hiển thị placeholder với chữ cái đầu và màu nền
-                          const displayName = formData.displayName || 'N'
-                          const color = formData.color || '#6B7280'
-                          e.currentTarget.src = `data:image/svg+xml;base64,${btoa(`
-                            <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-                              <rect width="64" height="64" fill="${color}" rx="8"/>
-                              <text x="32" y="40" text-anchor="middle" fill="white" font-size="24" font-family="Arial">
-                                ${displayName.charAt(0).toUpperCase()}
-                              </text>
-                            </svg>
-                          `)}`
-                        }}
-                      />
+                      {(formData.imageUrl || formData.image) ? (
+                        <img 
+                          src={getProductTypeImage(formData, 'thumbnail')} 
+                          alt="Preview" 
+                          className="w-16 h-16 object-cover rounded border"
+                          onError={(e) => {
+                            const fallback = getFallbackDisplay(formData.displayName)
+                            e.currentTarget.src = `data:image/svg+xml;base64,${btoa(`
+                              <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="64" height="64" fill="${fallback.color}" rx="8"/>
+                                <text x="32" y="40" text-anchor="middle" fill="white" font-size="24" font-family="Arial">
+                                  ${fallback.text}
+                                </text>
+                              </svg>
+                            `)}`
+                          }}
+                        />
+                      ) : (
+                        <div 
+                          className="w-16 h-16 rounded border flex items-center justify-center"
+                          style={{ backgroundColor: formData.color || '#6B7280' }}
+                        >
+                          <span className="text-white font-bold text-lg">
+                            {(formData.displayName || 'N').charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -474,26 +520,18 @@ export default function AdminProductTypesPage() {
                 <tr key={productType._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      {productType.imageBase64 ? (
+                      {hasValidImage(productType) ? (
                         <img 
-                          src={productType.imageBase64} 
-                          alt={productType.displayName}
-                          className="w-10 h-10 object-cover rounded mr-3"
-                        />
-                      ) : productType.image ? (
-                        <img 
-                          src={`/api/images${productType.image.replace('/uploads', '')}`}
+                          src={productType.finalImageUrl || getProductTypeImage(productType, 'thumbnail')} 
                           alt={productType.displayName}
                           className="w-10 h-10 object-cover rounded mr-3"
                           onError={(e) => {
-                            // Hiển thị placeholder với chữ cái đầu và màu nền
-                            const displayName = productType.displayName || productType.name
-                            const color = productType.color || '#6B7280'
+                            const fallback = getFallbackDisplay(productType.displayName || productType.name)
                             e.currentTarget.src = `data:image/svg+xml;base64,${btoa(`
                               <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="40" height="40" fill="${color}" rx="6"/>
+                                <rect width="40" height="40" fill="${fallback.color}" rx="6"/>
                                 <text x="20" y="26" text-anchor="middle" fill="white" font-size="16" font-family="Arial">
-                                  ${displayName.charAt(0).toUpperCase()}
+                                  ${fallback.text}
                                 </text>
                               </svg>
                             `)}`

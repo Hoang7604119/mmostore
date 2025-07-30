@@ -8,6 +8,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { CONTACT_INFO } from '@/config/contact'
+import { getProductTypeImage, hasValidImage, getFallbackDisplay } from '@/lib/imageUtils'
 
 interface Product {
   _id: string
@@ -47,7 +48,9 @@ interface ProductType {
   icon?: string
   color: string
   image?: string
+  imageUrl?: string
   imageBase64?: string
+  finalImageUrl?: string
   order: number
 }
 
@@ -218,14 +221,14 @@ export default function MarketplacePage() {
       
       if (response.ok) {
         // Show account details
-        const accountsInfo = data.order.accounts.map((acc: any) => 
+        const accountsInfo = data.order?.accounts?.map((acc: any) => 
           `Username: ${acc.username}\nPassword: ${acc.password}${acc.email ? `\nEmail: ${acc.email}` : ''}${acc.additionalInfo ? `\nThông tin bổ sung: ${acc.additionalInfo}` : ''}`
-        ).join('\n\n---\n\n')
+        ).join('\n\n---\n\n') || 'Không có thông tin tài khoản'
         
-        alert(`🎉 Mua thành công ${purchaseQuantity} tài khoản!\n\n${accountsInfo}\n\nSố credit còn lại: ${data.order.remainingCredit.toLocaleString('vi-VN')} VNĐ`)
+        alert(`🎉 Mua thành công ${purchaseQuantity} tài khoản!\n\n${accountsInfo}\n\nSố credit còn lại: ${data.order?.remainingCredit?.toLocaleString('vi-VN') || '0'} VNĐ`)
         
         // Update user credit in state
-        setUser(prev => prev ? { ...prev, credit: data.order.remainingCredit } : null)
+        setUser(prev => prev ? { ...prev, credit: data.order?.remainingCredit || 0 } : null)
         
         fetchProducts() // Refresh products
         setSelectedProduct(null)
@@ -245,7 +248,7 @@ export default function MarketplacePage() {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.seller.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.seller?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesType = !selectedType || product.type === selectedType
     const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter
@@ -403,35 +406,41 @@ export default function MarketplacePage() {
                     <div className="relative z-10 text-center">
                       <div className="mb-6 flex justify-center">
                         <div className="relative">
-                          {type.imageBase64 || type.image ? (
+                          {hasValidImage(type) ? (
                             <img 
-                              src={type.imageBase64 || (type.image ? `/api/images${type.image.replace('/uploads', '')}` : type.image)} 
+                              src={getProductTypeImage(type)} 
                               alt={type.displayName}
                               className="w-20 h-20 object-cover rounded-2xl shadow-lg group-hover:shadow-xl transition-shadow duration-300"
                               onError={(e) => {
+                                const fallback = getFallbackDisplay(type);
                                 e.currentTarget.src = `data:image/svg+xml;base64,${btoa(`
                                   <svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
                                     <defs>
                                       <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style="stop-color:${type.color || '#6B7280'};stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:${type.color || '#6B7280'}CC;stop-opacity:1" />
+                                        <stop offset="0%" style="stop-color:${fallback.color};stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:${fallback.color}CC;stop-opacity:1" />
                                       </linearGradient>
                                     </defs>
                                     <rect width="80" height="80" fill="url(#grad)" rx="16"/>
                                     <text x="40" y="50" text-anchor="middle" fill="white" font-size="28" font-family="Arial" font-weight="bold">
-                                      ${type.displayName.charAt(0).toUpperCase()}
+                                      ${fallback.text}
                                     </text>
                                   </svg>
                                 `)}`
                               }}
                             />
                           ) : (
-                            <div 
-                              className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-lg group-hover:shadow-xl transition-shadow duration-300"
-                              style={{ background: `linear-gradient(135deg, ${type.color || '#6B7280'}, ${type.color || '#6B7280'}CC)` }}
-                            >
-                              {type.displayName.charAt(0).toUpperCase()}
-                            </div>
+                            (() => {
+                              const fallback = getFallbackDisplay(type);
+                              return (
+                                <div 
+                                  className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-lg group-hover:shadow-xl transition-shadow duration-300"
+                                  style={{ background: `linear-gradient(135deg, ${fallback.color}, ${fallback.color}CC)` }}
+                                >
+                                  {fallback.text}
+                                </div>
+                              );
+                            })()
                           )}
                           
                           {/* Floating badge */}
@@ -648,43 +657,41 @@ export default function MarketplacePage() {
                             {/* Product Header */}
                             <div className="mb-4">
                               <div className="flex items-center space-x-2 mb-3">
-                                {typeInfo?.imageBase64 ? (
+                                {typeInfo && hasValidImage(typeInfo) ? (
                                   <img 
-                                    src={typeInfo.imageBase64} 
-                                    alt={typeInfo?.displayName || product.type}
-                                    className="w-10 h-10 object-cover rounded-xl shadow-md"
-                                  />
-                                ) : typeInfo?.image ? (
-                                  <img 
-                                    src={`/api/images${typeInfo.image.replace('/uploads', '')}`} 
+                                    src={getProductTypeImage(typeInfo)} 
                                     alt={typeInfo?.displayName || product.type}
                                     className="w-10 h-10 object-cover rounded-xl shadow-md"
                                     onError={(e) => {
-                                    const displayName = typeInfo?.displayName || product.type
-                                    const color = typeInfo?.color || '#6B7280'
-                                    e.currentTarget.src = `data:image/svg+xml;base64,${btoa(`
-                                      <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
-                                        <defs>
-                                          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" style="stop-color:${color};stop-opacity:1" />
-                                            <stop offset="100%" style="stop-color:${color}CC;stop-opacity:1" />
-                                          </linearGradient>
-                                        </defs>
-                                        <rect width="40" height="40" fill="url(#grad)" rx="8"/>
-                                        <text x="20" y="26" text-anchor="middle" fill="white" font-size="16" font-family="Arial" font-weight="bold">
-                                          ${displayName.charAt(0).toUpperCase()}
-                                        </text>
-                                      </svg>
-                                    `)}`
-                                  }}
+                                      const fallback = getFallbackDisplay(typeInfo);
+                                      e.currentTarget.src = `data:image/svg+xml;base64,${btoa(`
+                                        <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+                                          <defs>
+                                            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                              <stop offset="0%" style="stop-color:${fallback.color};stop-opacity:1" />
+                                              <stop offset="100%" style="stop-color:${fallback.color}CC;stop-opacity:1" />
+                                            </linearGradient>
+                                          </defs>
+                                          <rect width="40" height="40" fill="url(#grad)" rx="8"/>
+                                          <text x="20" y="26" text-anchor="middle" fill="white" font-size="16" font-family="Arial" font-weight="bold">
+                                            ${fallback.text}
+                                          </text>
+                                        </svg>
+                                      `)}`
+                                    }}
                                   />
                                 ) : (
-                                  <div 
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md"
-                                    style={{ background: `linear-gradient(135deg, ${typeInfo?.color || '#6B7280'}, ${typeInfo?.color || '#6B7280'}CC)` }}
-                                  >
-                                    {(typeInfo?.displayName || product.type).charAt(0).toUpperCase()}
-                                  </div>
+                                  (() => {
+                                    const fallback = getFallbackDisplay(typeInfo || { displayName: product.type, color: '#6B7280' });
+                                    return (
+                                      <div 
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md"
+                                        style={{ background: `linear-gradient(135deg, ${fallback.color}, ${fallback.color}CC)` }}
+                                      >
+                                        {fallback.text}
+                                      </div>
+                                    );
+                                  })()
                                 )}
                                 <div>
                                   <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${typeInfo ? getColorClasses(typeInfo.color).bg : 'bg-gray-100'} ${typeInfo ? getColorClasses(typeInfo.color).text : 'text-gray-800'}`}>
@@ -745,10 +752,10 @@ export default function MarketplacePage() {
                             {/* Seller Info */}
                             <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-xl">
                               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">
-                                {product.seller.username.charAt(0).toUpperCase()}
+                                {product.seller?.username?.charAt(0).toUpperCase() || 'U'}
                               </div>
                               <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900">{product.seller.username}</div>
+                                <div className="text-sm font-medium text-gray-900">{product.seller?.username || 'Unknown'}</div>
                                 {product.seller.rating && (
                                   <div className="flex items-center">
                                     <Star className="h-3 w-3 text-yellow-400 fill-current mr-1" />
@@ -803,32 +810,35 @@ export default function MarketplacePage() {
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2 mb-2">
-                                  {typeInfo?.imageBase64 || typeInfo?.image ? (
+                                  {typeInfo && hasValidImage(typeInfo) ? (
                                     <img 
-                                      src={typeInfo.imageBase64 || (typeInfo.image ? `/api/images${typeInfo.image.replace('/uploads', '')}` : typeInfo.image)} 
+                                      src={getProductTypeImage(typeInfo)} 
                                       alt={typeInfo?.displayName || product.type}
                                       className="w-6 h-6 object-cover rounded"
                                       onError={(e) => {
-                                        // Tạo placeholder với chữ cái đầu và màu nền
-                                        const displayName = typeInfo?.displayName || product.type
-                                        const color = typeInfo?.color || '#6B7280'
+                                        const fallback = getFallbackDisplay(typeInfo);
                                         e.currentTarget.src = `data:image/svg+xml;base64,${btoa(`
                                           <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-                                            <rect width="24" height="24" fill="${color}" rx="3"/>
+                                            <rect width="24" height="24" fill="${fallback.color}" rx="3"/>
                                             <text x="12" y="15" text-anchor="middle" fill="white" font-size="12" font-family="Arial">
-                                              ${displayName.charAt(0).toUpperCase()}
+                                              ${fallback.text}
                                             </text>
                                           </svg>
                                         `)}`
                                       }}
                                     />
                                   ) : (
-                                    <div 
-                                      className="w-6 h-6 rounded flex items-center justify-center text-white font-semibold text-xs"
-                                      style={{ backgroundColor: typeInfo?.color || '#6B7280' }}
-                                    >
-                                      {(typeInfo?.displayName || product.type).charAt(0).toUpperCase()}
-                                    </div>
+                                    (() => {
+                                      const fallback = getFallbackDisplay(typeInfo || { displayName: product.type, color: '#6B7280' });
+                                      return (
+                                        <div 
+                                          className="w-6 h-6 rounded flex items-center justify-center text-white font-semibold text-xs"
+                                          style={{ backgroundColor: fallback.color }}
+                                        >
+                                          {fallback.text}
+                                        </div>
+                                      );
+                                    })()
                                   )}
                                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${typeInfo ? getColorClasses(typeInfo.color).bg : 'bg-gray-100'} ${typeInfo ? getColorClasses(typeInfo.color).text : 'text-gray-800'}`}>
                                     {typeInfo?.displayName || product.type}
@@ -847,7 +857,7 @@ export default function MarketplacePage() {
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                   <div className="flex items-center">
                                     <User className="h-4 w-4 mr-1" />
-                                    <span>{product.seller.username}</span>
+                                    <span>{product.seller?.username || 'Unknown'}</span>
                                   </div>
                                   <div className="flex items-center">
                                     <Package className="h-4 w-4 mr-1" />
@@ -962,7 +972,7 @@ export default function MarketplacePage() {
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl border border-green-100">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Người bán</label>
                   <p className="text-sm font-medium text-gray-900">
-                    {selectedProduct.seller.username} ({selectedProduct.seller.email})
+                    {selectedProduct.seller?.username || 'Unknown'} ({selectedProduct.seller?.email || 'Unknown'})
                   </p>
                 </div>
                 
@@ -1048,29 +1058,26 @@ export default function MarketplacePage() {
               <div className="flex items-center space-x-3 mb-3">
                 {(() => {
                   const productType = productTypes.find(t => t.name === productToPurchase.type)
-                  return productType?.imageBase64 ? (
-                    <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-gray-100">
-                      <img
-                        src={productType.imageBase64}
-                        alt={productType.displayName}
-                        className="w-12 h-12 object-contain"
-                      />
-                    </div>
-                  ) : productType?.image ? (
-                    <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-gray-100">
-                      <img
-                        src={`/api/images${productType.image.replace('/uploads', '')}`}
-                        alt={productType.displayName}
-                        className="w-12 h-12 object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg flex items-center justify-center" style={{ backgroundColor: productType?.color || '#6B7280' }}>
-                      <div className="text-white font-bold text-xl">
-                        {(productType?.displayName || productToPurchase.type).charAt(0).toUpperCase()}
+                  if (productType && hasValidImage(productType)) {
+                    return (
+                      <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-gray-100">
+                        <img
+                          src={getProductTypeImage(productType)}
+                          alt={productType.displayName}
+                          className="w-12 h-12 object-contain"
+                        />
                       </div>
-                    </div>
-                  )
+                    )
+                  } else {
+                    const fallback = getFallbackDisplay(productType || { displayName: productToPurchase.type, color: '#6B7280' });
+                    return (
+                      <div className="w-16 h-16 rounded-lg flex items-center justify-center" style={{ backgroundColor: fallback.color }}>
+                        <div className="text-white font-bold text-xl">
+                          {fallback.text}
+                        </div>
+                      </div>
+                    )
+                  }
                 })()}
                 <div>
                   <h4 className="font-medium">{productToPurchase.title}</h4>

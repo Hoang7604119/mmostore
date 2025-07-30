@@ -4,6 +4,7 @@ import ProductType from '@/models/ProductType'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { getImageUrl } from '@/lib/imageUtils'
 
 // GET - Lấy danh sách product types với base64 images
 export async function GET(request: NextRequest) {
@@ -13,22 +14,27 @@ export async function GET(request: NextRequest) {
     // Lấy chỉ những product types đang active
     const productTypes = await ProductType.find({ isActive: true })
       .sort({ order: 1, displayName: 1 })
-      .select('name displayName color image description order')
+      .select('name displayName color image imageUrl description order')
     
-    // Convert images to base64
-    const productTypesWithBase64 = await Promise.all(
+    // Process images with unified logic
+    const productTypesWithImages = await Promise.all(
       productTypes.map(async (type) => {
         const typeObj = type.toObject()
         
-        if (typeObj.image) {
+        // Priority: imageUrl (Supabase) > image (legacy file system)
+        if (typeObj.imageUrl) {
+          // Supabase Storage URL - use directly
+          typeObj.finalImageUrl = typeObj.imageUrl
+        } else if (typeObj.image) {
+          // Legacy file system image - convert to base64 for backward compatibility
           try {
             // Remove leading slash if present to avoid path issues
-            const cleanImagePath = typeObj.image.startsWith('/') ? typeObj.image.slice(1) : typeObj.image
+            const cleanImagePath = typeObj.image?.startsWith('/') ? typeObj.image.slice(1) : typeObj.image
             const imagePath = join(process.cwd(), 'public', cleanImagePath)
             
             if (existsSync(imagePath)) {
               const imageBuffer = await readFile(imagePath)
-              const ext = typeObj.image.split('.').pop()?.toLowerCase()
+              const ext = typeObj.image?.split('.').pop()?.toLowerCase()
               let mimeType = 'image/jpeg'
               
               switch (ext) {
@@ -44,17 +50,25 @@ export async function GET(request: NextRequest) {
               }
               
               typeObj.imageBase64 = `data:${mimeType};base64,${imageBuffer.toString('base64')}`
+              typeObj.finalImageUrl = typeObj.imageBase64
+            } else {
+              // File not found, use image utils for fallback
+              typeObj.finalImageUrl = getImageUrl(typeObj)
             }
           } catch (error) {
             console.error(`Error reading image for ${typeObj.name}:`, error)
+            typeObj.finalImageUrl = getImageUrl(typeObj)
           }
+        } else {
+          // No image available, use image utils for fallback
+          typeObj.finalImageUrl = getImageUrl(typeObj)
         }
         
         return typeObj
       })
     )
 
-    return NextResponse.json({ productTypes: productTypesWithBase64 }, { status: 200 })
+    return NextResponse.json({ productTypes: productTypesWithImages }, { status: 200 })
 
   } catch (error) {
     console.error('Get product types with images error:', error)

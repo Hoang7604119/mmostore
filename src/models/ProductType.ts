@@ -6,7 +6,8 @@ export interface IProductType extends Document {
   displayName: string
   icon: string
   color: string
-  image?: string
+  image?: string // Legacy field for file system images
+  imageUrl?: string // New field for Supabase Storage URLs
   description?: string
   isActive: boolean
   order: number
@@ -44,6 +45,10 @@ const ProductTypeSchema = new Schema<IProductType>({
     match: /^#[0-9A-F]{6}$/i // Hex color validation
   },
   image: {
+    type: String,
+    trim: true
+  },
+  imageUrl: {
     type: String,
     trim: true
   },
