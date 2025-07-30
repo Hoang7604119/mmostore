@@ -7,6 +7,7 @@ import { ShoppingCart, User, Package, Settings, LogOut, Store } from 'lucide-rea
 import { UserData } from '@/types/user'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import RealtimeTest from '@/components/RealtimeTest'
 
 interface UserWithCredit extends UserData {
   credit: number
@@ -235,6 +236,9 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+        
+        {/* Supabase Realtime Test */}
+        <RealtimeTest />
       </div>
       
       <Footer />

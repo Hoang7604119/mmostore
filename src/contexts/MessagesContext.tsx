@@ -18,17 +18,20 @@ interface MessagesContextType {
   sendMessageToConversation: (conversationId: string, receiverId: string, content: string, messageType?: 'text' | 'image' | 'file' | 'system', attachments?: any[], metadata?: any) => Promise<any>
   updateConversationFromMessage: (message: Message, currentUserId?: string) => void
   updateConversationReadStatus: (conversationId: string, readByUserId: string) => void
+  markConversationAsRead: (conversationId: string) => Promise<void>
   forceRefresh: () => Promise<void>
+  broadcastMessageRead: (data: any) => Promise<void>
 }
 
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined)
 
 interface MessagesProviderProps {
   children: ReactNode
+  userId?: string | null
 }
 
-export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children }) => {
-  const messagesHook = useMessages()
+export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children, userId }) => {
+  const messagesHook = useMessages(userId)
 
   return (
     <MessagesContext.Provider value={messagesHook}>

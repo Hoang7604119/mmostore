@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
         
         if (typeObj.image) {
           try {
-            const imagePath = join(process.cwd(), 'public', typeObj.image)
+            // Remove leading slash if present to avoid path issues
+            const cleanImagePath = typeObj.image.startsWith('/') ? typeObj.image.slice(1) : typeObj.image
+            const imagePath = join(process.cwd(), 'public', cleanImagePath)
             
             if (existsSync(imagePath)) {
               const imageBuffer = await readFile(imagePath)

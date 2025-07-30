@@ -22,7 +22,7 @@ export default function ChatPopup() {
   const [isUploading, setIsUploading] = useState(false)
   
   const { user } = useAuth()
-  const { conversations, setConversations, messages, setMessages, totalUnread, loading, sendMessageToConversation, fetchMessages, fetchConversations, updateConversationFromMessage, updateConversationReadStatus } = useMessagesContext()
+  const { conversations, setConversations, messages, setMessages, totalUnread, loading, sendMessageToConversation, fetchMessages, fetchConversations, updateConversationFromMessage, updateConversationReadStatus, markConversationAsRead } = useMessagesContext()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const currentConversationRef = useRef<string | null>(null)
@@ -64,12 +64,32 @@ export default function ChatPopup() {
     }
   }, [selectedConversation, messages, user, updateConversationFromMessage, setMessages])
 
+  const prevSelectedConversationRef = useRef<string | null>(null)
+  const conversationsRef = useRef(conversations)
+  const markedAsReadRef = useRef<Set<string>>(new Set())
+  
+  // Update conversations ref when conversations change
   useEffect(() => {
-    if (selectedConversation) {
+    conversationsRef.current = conversations
+  }, [conversations])
+  
+  useEffect(() => {
+    if (selectedConversation && selectedConversation !== prevSelectedConversationRef.current) {
       fetchMessages(selectedConversation)
+      // Mark conversation as read when selected (only if it has unread messages and not already marked)
+      const conversation = conversationsRef.current.find(conv => conv.conversationId === selectedConversation)
+      if (conversation && conversation.unreadCount > 0 && !markedAsReadRef.current.has(selectedConversation)) {
+        markConversationAsRead(selectedConversation)
+        markedAsReadRef.current.add(selectedConversation)
+        // Clear the flag after a short delay
+        setTimeout(() => {
+          markedAsReadRef.current.delete(selectedConversation)
+        }, 2000)
+      }
+      prevSelectedConversationRef.current = selectedConversation
       // Don't call fetchConversations here as it will be called by message-read-update event
     }
-  }, [selectedConversation, fetchMessages])
+  }, [selectedConversation, fetchMessages, markConversationAsRead])
 
   // Handle message read updates from Supabase Realtime
   useEffect(() => {
@@ -80,10 +100,9 @@ export default function ChatPopup() {
       if (data.conversationId && data.readByUserId) {
         updateConversationReadStatus(data.conversationId, data.readByUserId)
       }
-      // Refresh conversations to update unread counts
-      fetchConversations()
+      // Note: No need to call fetchConversations() here as updateConversationReadStatus() already updates the local state
       
-      // If the read update is for current conversation, refresh messages
+      // If the read update is for current conversation, refresh messages to show read status
       if (selectedConversation && data.conversationId === selectedConversation) {
         fetchMessages(selectedConversation)
       }
@@ -94,7 +113,7 @@ export default function ChatPopup() {
     return () => {
       window.removeEventListener('message-read-update', handleMessageReadUpdate as EventListener)
     }
-  }, [fetchConversations, fetchMessages, selectedConversation, updateConversationReadStatus])
+  }, [fetchMessages, selectedConversation, updateConversationReadStatus])
   
   // Handle conversation selection
   useEffect(() => {

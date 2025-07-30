@@ -3,14 +3,17 @@
 import { Toaster } from 'react-hot-toast'
 import ChatPopup from './ChatPopup'
 import { MessagesProvider } from '@/contexts/MessagesContext'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function ClientWrapper({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { user } = useAuth()
+  
   return (
-    <MessagesProvider>
+    <MessagesProvider userId={user?._id || null}>
       {children}
       <Toaster
         position="top-right"

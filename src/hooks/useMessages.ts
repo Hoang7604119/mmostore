@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSupabaseRealtime } from './useSupabaseRealtime'
 
 export interface MessageUser {
   _id: string
@@ -60,13 +61,21 @@ export interface MessagesResponse {
   error?: string
 }
 
-export const useMessages = () => {
+export const useMessages = (userId?: string | null) => {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [totalUnread, setTotalUnread] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  // Setup Supabase Realtime (without callbacks to avoid double processing)
+  // Components will handle the window events directly
+  const { broadcastNewMessage, broadcastMessageRead } = useSupabaseRealtime({
+    userId
+    // Note: Removed onNewMessage and onMessageRead callbacks to prevent double processing
+    // Components like ChatPopup and MessageIcon will handle window events directly
+  })
 
   // Fetch conversations
   const fetchConversations = useCallback(async (page = 1, limit = 20) => {
@@ -167,6 +176,9 @@ export const useMessages = () => {
         throw new Error(data.error || 'Lỗi khi gửi tin nhắn')
       }
 
+      // Broadcast new message via Supabase Realtime
+      await broadcastNewMessage(data.message)
+
       // Refresh conversations to update last message
       await fetchConversations()
       
@@ -176,7 +188,7 @@ export const useMessages = () => {
       console.error('Send message error:', err)
       throw err
     }
-  }, [router, fetchConversations])
+  }, [router, fetchConversations, broadcastNewMessage])
 
   // Send message to existing conversation
   const sendMessageToConversation = useCallback(async (
@@ -214,6 +226,9 @@ export const useMessages = () => {
         throw new Error(data.error || 'Lỗi khi gửi tin nhắn')
       }
 
+      // Broadcast new message via Supabase Realtime
+      await broadcastNewMessage(data.message)
+
       // Refresh conversations to update last message
       await fetchConversations()
       
@@ -223,7 +238,7 @@ export const useMessages = () => {
       console.error('Send message to conversation error:', err)
       throw err
     }
-  }, [router, fetchConversations])
+  }, [router, fetchConversations, broadcastNewMessage])
 
   // Update conversation from new message (for real-time updates)
   const updateConversationFromMessage = useCallback((message: Message, currentUserId?: string) => {
@@ -302,6 +317,32 @@ export const useMessages = () => {
     })
   }, [])
 
+  // Mark conversation as read
+  const markConversationAsRead = useCallback(async (conversationId: string) => {
+    try {
+      // Call the API to mark messages as read (this will trigger the read update)
+      const response = await fetch(`/api/messages/${conversationId}?page=1&limit=1`, {
+        method: 'GET',
+        credentials: 'include'
+      })
+
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+
+      if (response.ok) {
+        // Update local state immediately
+        updateConversationReadStatus(conversationId, userId || '')
+        
+        // Broadcast the read status via Supabase Realtime
+        await broadcastMessageRead({ conversationId, readByUserId: userId || '' })
+      }
+    } catch (err) {
+      console.error('Mark conversation as read error:', err)
+    }
+  }, [router, userId, updateConversationReadStatus, broadcastMessageRead])
+
   // Force refresh data from server
   const forceRefresh = useCallback(async () => {
     try {
@@ -347,6 +388,8 @@ export const useMessages = () => {
     sendMessageToConversation,
     updateConversationFromMessage,
     updateConversationReadStatus,
-    forceRefresh
+    markConversationAsRead,
+    forceRefresh,
+    broadcastMessageRead
   }
 }

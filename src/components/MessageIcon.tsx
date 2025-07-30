@@ -16,7 +16,7 @@ interface MessageIconProps {
 const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const { conversations, totalUnread, loading, error, fetchConversations, updateConversationReadStatus } = useMessagesContext()
+  const { conversations, totalUnread, loading, error, fetchConversations, updateConversationReadStatus, markConversationAsRead } = useMessagesContext()
   
   // Handle message read updates from Supabase Realtime
   useEffect(() => {
@@ -27,8 +27,7 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
       if (data.conversationId && data.readByUserId) {
         updateConversationReadStatus(data.conversationId, data.readByUserId)
       }
-      // Also refresh conversations to ensure data consistency
-      fetchConversations()
+      // Note: No need to call fetchConversations() here as updateConversationReadStatus() already updates the local state
     }
 
     window.addEventListener('message-read-update', handleMessageReadUpdate as EventListener)
@@ -36,7 +35,7 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
     return () => {
       window.removeEventListener('message-read-update', handleMessageReadUpdate as EventListener)
     }
-  }, [fetchConversations, updateConversationReadStatus])
+  }, [updateConversationReadStatus])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -52,6 +51,21 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
 
   const handleRefresh = () => {
     fetchConversations()
+  }
+
+  // Handle clicking on message icon
+  const handleIconClick = () => {
+    setIsOpen(!isOpen)
+  }
+
+  // Handle clicking on a specific conversation
+  const handleConversationClick = async (conversationId: string) => {
+    setIsOpen(false)
+    // Mark this specific conversation as read (only if it has unread messages)
+    const conversation = conversations.find(conv => conv.conversationId === conversationId)
+    if (conversation && conversation.unreadCount > 0) {
+      await markConversationAsRead(conversationId)
+    }
   }
 
   const formatTimeAgo = (dateString: string) => {
@@ -83,7 +97,7 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Message Icon */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleIconClick}
         className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors"
         aria-label="Tin nhắn"
       >
@@ -153,7 +167,7 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
                   className={`block px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                     conversation.unreadCount > 0 ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                   }`}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => handleConversationClick(conversation.conversationId)}
                 >
                   <div className="flex items-start space-x-3">
                     {/* Avatar */}
