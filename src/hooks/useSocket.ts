@@ -29,6 +29,14 @@ export const useSocket = (userId?: string): SocketContextType => {
     // Only create socket if it doesn't exist
     if (socketRef.current) return
 
+    // Check if Socket.IO should be enabled (disabled on Vercel by default)
+    const isSocketEnabled = process.env.NEXT_PUBLIC_ENABLE_SOCKET !== 'false'
+    
+    if (!isSocketEnabled) {
+      console.log('Socket.IO disabled for this environment (likely Vercel)')
+      return
+    }
+
     // Initialize socket connection
     const initSocket = () => {
       try {

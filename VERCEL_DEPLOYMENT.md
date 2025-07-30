@@ -27,6 +27,9 @@ JWT_SECRET=your-super-secure-jwt-secret-key
 NEXT_PUBLIC_APP_URL=https://your-vercel-app.vercel.app
 NODE_ENV=production
 
+# Socket.IO (Disable for Vercel)
+NEXT_PUBLIC_ENABLE_SOCKET=false
+
 # PayOS Payment
 PAYOS_CLIENT_ID=e903742c-1c37-416b-9c10-bb7d8af8d765
 PAYOS_API_KEY=98adda5d-2b6a-4acb-8da3-4e30fbee8052
