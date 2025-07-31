@@ -41,26 +41,55 @@ async function processTransaction(transaction: any) {
       }
     }
 
-    // Tìm 8 số cuối của orderCode từ description
+    // Tìm orderCode từ description
     const description = transaction.description || ''
-    // Tìm tất cả các số trong description và lấy 8 số cuối nếu có
+    // Tìm tất cả các số trong description
     const numberMatches = description.match(/\d+/g)
     let orderCodeSuffix = null
     
     if (numberMatches) {
-      // Tìm số có ít nhất 8 chữ số
+      // Tìm kiếm orderCode theo thứ tự ưu tiên:
+      // 1. Số có độ dài 13 chữ số (timestamp format như 1753979636911)
+      // 2. Số có độ dài 10-12 chữ số
+      // 3. Số có độ dài 8-9 chữ số và lấy 8 số cuối
+      
+      // Ưu tiên số có 13 chữ số (timestamp format)
       for (const match of numberMatches) {
-        if (match.length >= 8) {
+        if (match.length === 13) {
           orderCodeSuffix = match.slice(-8) // Lấy 8 số cuối
+          console.log(`Found 13-digit number (likely orderCode): ${match}, using suffix: ${orderCodeSuffix}`)
           break
         }
       }
       
-      // Nếu không tìm thấy số nào có ít nhất 8 chữ số, thử tìm số có 5 chữ số trở lên
+      // Nếu không tìm thấy số 13 chữ số, tìm số 10-12 chữ số
+      if (!orderCodeSuffix) {
+        for (const match of numberMatches) {
+          if (match.length >= 10 && match.length <= 12) {
+            orderCodeSuffix = match.slice(-8) // Lấy 8 số cuối
+            console.log(`Found ${match.length}-digit number: ${match}, using suffix: ${orderCodeSuffix}`)
+            break
+          }
+        }
+      }
+      
+      // Nếu vẫn không tìm thấy, tìm số có ít nhất 8 chữ số
+      if (!orderCodeSuffix) {
+        for (const match of numberMatches) {
+          if (match.length >= 8) {
+            orderCodeSuffix = match.slice(-8) // Lấy 8 số cuối
+            console.log(`Found ${match.length}-digit number: ${match}, using suffix: ${orderCodeSuffix}`)
+            break
+          }
+        }
+      }
+      
+      // Cuối cùng, nếu không tìm thấy số nào có ít nhất 8 chữ số, thử tìm số có 5 chữ số trở lên
       if (!orderCodeSuffix) {
         for (const match of numberMatches) {
           if (match.length >= 5) {
             orderCodeSuffix = match
+            console.log(`Found ${match.length}-digit number: ${match}, using as suffix: ${orderCodeSuffix}`)
             break
           }
         }

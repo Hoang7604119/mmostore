@@ -10,6 +10,41 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB()
     
+    const { searchParams } = new URL(request.url)
+    const suffix = searchParams.get('suffix')
+    
+    if (suffix) {
+      // Find payments ending with specific suffix
+      const allPayments = await Payment.find({})
+        .populate('userId', 'username email credit')
+        .lean()
+      
+      const matching = allPayments.filter(p => p.orderCode.toString().endsWith(suffix))
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          suffix,
+          totalPayments: allPayments.length,
+          matchingPayments: matching.length,
+          payments: matching.map(p => ({
+            orderCode: p.orderCode,
+            amount: p.amount,
+            status: p.status,
+            paymentMethod: p.paymentMethod,
+            transactionId: p.transactionId,
+            user: p.userId ? {
+              username: (p.userId as any).username,
+              email: (p.userId as any).email,
+              credit: (p.userId as any).credit
+            } : null,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt
+          }))
+        }
+      }, { status: 200 })
+    }
+    
     // Get recent payments
     const payments = await Payment.find({})
       .sort({ createdAt: -1 })
