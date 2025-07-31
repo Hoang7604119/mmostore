@@ -8,6 +8,7 @@ import { UserData } from '@/types/user'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import NotificationBanner from '@/components/NotificationBanner'
 import { CONTACT_INFO } from '@/config/contact'
 import { MESSAGES } from '@/config/messages'
 
@@ -101,6 +102,9 @@ export default function HomePage() {
           </div>
         </header>
       )}
+
+      {/* Notification Banner */}
+      <NotificationBanner />
 
       <div className="flex-1">
         {/* Hero Section - Modern & Clean */}

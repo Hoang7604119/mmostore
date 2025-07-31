@@ -52,6 +52,15 @@ export const APP_CONFIG = {
     ENABLE_PUSH_NOTIFICATIONS: true,
     AUTO_DELETE_AFTER_DAYS: 30
   },
+
+  // Cài đặt banner thông báo
+  BANNER: {
+    ENABLED: true,
+    MESSAGE: 'Website đang trong quá trình thử nghiệm và phát triển chưa đi vào hoạt động chính thức, mọi sản phẩm đều là minh họa.',
+    TYPE: 'warning', // 'info', 'warning', 'error', 'success'
+    DISMISSIBLE: true,
+    AUTO_HIDE_AFTER_MS: null // null = không tự ẩn, số = milliseconds
+  },
   
   // Cài đặt sản phẩm
   PRODUCTS: {

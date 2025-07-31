@@ -631,22 +631,43 @@ export const createNotification = async (userId: string, message: string, type: 
       const { supabase } = await import('@/lib/supabase')
       const channel = supabase.channel(`user-${userId}`)
       
-      await channel.send({
-        type: 'broadcast',
-        event: 'new-notification',
-        payload: {
-          _id: notification._id,
-          title: notification.title,
-          message: notification.message,
-          type: notification.type,
-          category: notification.category,
-          isRead: notification.isRead,
-          actionUrl: notification.actionUrl,
-          actionText: notification.actionText,
-          createdAt: notification.createdAt,
-          metadata: notification.metadata
-        }
+      // Subscribe to channel first, then send the message
+      await new Promise((resolve, reject) => {
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            // Channel is ready, send the notification
+            channel.send({
+              type: 'broadcast',
+              event: 'new-notification',
+              payload: {
+                _id: notification._id,
+                title: notification.title,
+                message: notification.message,
+                type: notification.type,
+                category: notification.category,
+                isRead: notification.isRead,
+                actionUrl: notification.actionUrl,
+                actionText: notification.actionText,
+                createdAt: notification.createdAt,
+                metadata: notification.metadata
+              }
+            }).then(() => {
+              // Unsubscribe after sending
+              channel.unsubscribe()
+              resolve(true)
+            }).catch(reject)
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            reject(new Error(`Channel subscription failed: ${status}`))
+          }
+        })
+        
+        // Set a timeout to avoid hanging
+        setTimeout(() => {
+          reject(new Error('Channel subscription timeout'))
+        }, 5000)
       })
+      
+      console.log(`Legacy realtime notification sent to user ${userId}`)
     } catch (error) {
       console.error('Failed to send Supabase Realtime notification:', error)
     }

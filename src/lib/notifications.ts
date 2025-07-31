@@ -144,6 +144,13 @@ export const NotificationTemplates = {
     category: 'payment' as const,
     actionText: 'Thử lại'
   },
+  WITHDRAWAL_REQUEST_CREATED: {
+    title: 'Yêu cầu rút tiền mới',
+    message: 'Người dùng {username} đã tạo yêu cầu rút {amount} VNĐ vào tài khoản {bankAccount} vào ngày {requestDate}.',
+    type: 'warning' as const,
+    category: 'payment' as const,
+    actionText: 'Xem yêu cầu'
+  },
 
   // System notifications
   SYSTEM_MAINTENANCE: {
@@ -258,22 +265,54 @@ export async function sendNotification(
       const { supabase } = await import('@/lib/supabase')
       const channel = supabase.channel(`user-${userId}`)
       
-      await channel.send({
-        type: 'broadcast',
-        event: 'new-notification',
-        payload: {
-          _id: notification._id,
-          title: notification.title,
-          message: notification.message,
-          type: notification.type,
-          category: notification.category,
-          isRead: notification.isRead,
-          actionUrl: notification.actionUrl,
-          actionText: notification.actionText,
-          createdAt: notification.createdAt,
-          metadata: notification.metadata
-        }
+      // Subscribe to channel first, then send the message
+      await new Promise((resolve, reject) => {
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            // Channel is ready, send the notification
+            channel.send({
+              type: 'broadcast',
+              event: 'new-notification',
+              payload: {
+                _id: notification._id,
+                title: notification.title,
+                message: notification.message,
+                type: notification.type,
+                category: notification.category,
+                isRead: notification.isRead,
+                actionUrl: notification.actionUrl,
+                actionText: notification.actionText,
+                createdAt: notification.createdAt,
+                metadata: notification.metadata
+              }
+            }).then(() => {
+              // Delay unsubscribe to avoid race condition
+              setTimeout(() => {
+                try {
+                  channel.unsubscribe()
+                } catch (error) {
+                  console.warn('Error unsubscribing from channel:', error)
+                }
+              }, 100)
+              resolve(true)
+            }).catch(reject)
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            reject(new Error(`Channel subscription failed: ${status}`))
+          }
+        })
+        
+        // Set a timeout to avoid hanging
+        setTimeout(() => {
+          try {
+            channel.unsubscribe()
+          } catch (error) {
+            console.warn('Error unsubscribing from channel on timeout:', error)
+          }
+          reject(new Error('Channel subscription timeout'))
+        }, 5000)
       })
+      
+      console.log(`Realtime notification sent to user ${userId}`)
     } catch (error) {
       console.error('Failed to send Supabase Realtime notification:', error)
     }
@@ -313,27 +352,60 @@ export async function sendBulkNotification(
       try {
         const { supabase } = await import('@/lib/supabase')
         
-        for (const notification of result) {
+        // Send notifications with proper channel subscription
+        const notificationPromises = result.map(async (notification) => {
           const userId = notification.userId
           const channel = supabase.channel(`user-${userId}`)
           
-          await channel.send({
-            type: 'broadcast',
-            event: 'new-notification',
-            payload: {
-              _id: notification._id,
-              title: notification.title,
-              message: notification.message,
-              type: notification.type,
-              category: notification.category,
-              isRead: notification.isRead,
-              actionUrl: notification.actionUrl,
-              actionText: notification.actionText,
-              createdAt: notification.createdAt,
-              metadata: notification.metadata
-            }
+          return new Promise((resolve, reject) => {
+            channel.subscribe((status) => {
+              if (status === 'SUBSCRIBED') {
+                // Channel is ready, send the notification
+                channel.send({
+                  type: 'broadcast',
+                  event: 'new-notification',
+                  payload: {
+                    _id: notification._id,
+                    title: notification.title,
+                    message: notification.message,
+                    type: notification.type,
+                    category: notification.category,
+                    isRead: notification.isRead,
+                    actionUrl: notification.actionUrl,
+                    actionText: notification.actionText,
+                    createdAt: notification.createdAt,
+                    metadata: notification.metadata
+                  }
+                }).then(() => {
+                  // Delay unsubscribe to avoid race condition
+                  setTimeout(() => {
+                    try {
+                      channel.unsubscribe()
+                    } catch (error) {
+                      console.warn('Error unsubscribing from channel:', error)
+                    }
+                  }, 100)
+                  resolve(true)
+                }).catch(reject)
+              } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                reject(new Error(`Channel subscription failed: ${status}`))
+              }
+            })
+            
+            // Set a timeout to avoid hanging
+            setTimeout(() => {
+              try {
+                channel.unsubscribe()
+              } catch (error) {
+                console.warn('Error unsubscribing from channel on timeout:', error)
+              }
+              reject(new Error('Channel subscription timeout'))
+            }, 5000)
           })
-        }
+        })
+        
+        // Wait for all notifications to be sent
+        await Promise.allSettled(notificationPromises)
         console.log(`Supabase Realtime bulk notifications sent for ${result.length} notifications`)
       } catch (realtimeError) {
         console.error('Failed to send Supabase Realtime bulk notifications:', realtimeError)

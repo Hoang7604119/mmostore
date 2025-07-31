@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { payOS } from '@/config/payos'
+import { payOS, PAYOS_CONFIG } from '@/config/payos'
 import { verifyToken } from '@/lib/auth'
 import User from '@/models/User'
 import connectDB from '@/lib/mongodb'
@@ -47,9 +47,24 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('Confirming webhook URL:', webhookUrl)
+    console.log('PayOS instance:', !!payOS)
+    console.log('PayOS config check:', {
+      hasClientId: !!PAYOS_CONFIG.CLIENT_ID,
+      hasApiKey: !!PAYOS_CONFIG.API_KEY,
+      hasChecksumKey: !!PAYOS_CONFIG.CHECKSUM_KEY
+    })
     
     try {
+      // Kiểm tra xem phương thức confirmWebhook có tồn tại không
+      console.log('PayOS methods available:', Object.getOwnPropertyNames(payOS))
+      console.log('confirmWebhook method exists:', typeof payOS.confirmWebhook)
+      
+      if (typeof payOS.confirmWebhook !== 'function') {
+        throw new Error('confirmWebhook method is not available in this PayOS SDK version')
+      }
+      
       // Sử dụng PayOS SDK để xác thực và cấu hình webhook URL
+      console.log('Calling payOS.confirmWebhook...')
       const result = await payOS.confirmWebhook(webhookUrl)
       
       console.log('Webhook confirmation result:', result)

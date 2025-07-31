@@ -49,9 +49,10 @@ export default function CreditPage() {
   const [selectedMethod, setSelectedMethod] = useState('payos')
   const [bankAccount, setBankAccount] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
-  const [paymentUrl, setPaymentUrl] = useState('')
-  const [qrCode, setQrCode] = useState('')
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showBankTransferModal, setShowBankTransferModal] = useState(false)
+  const [qrCode, setQrCode] = useState('')
+  const [paymentUrl, setPaymentUrl] = useState('')
   const [currentOrderCode, setCurrentOrderCode] = useState('')
   const [isCheckingStatus, setIsCheckingStatus] = useState(false)
   const searchParams = useSearchParams()
@@ -147,33 +148,12 @@ export default function CreditPage() {
 
     try {
       if (selectedMethod === 'payos') {
-        // Create PayOS payment
-        const response = await fetch('/api/payment/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            amount: parseInt(depositAmount)
-          })
-        })
-
-        const data = await response.json()
-        console.log('PayOS API response:', data)
-
-        if (data.success) {
-          console.log('QR Code received:', data.data.qrCode)
-          setPaymentUrl(data.data.paymentUrl)
-          setQrCode(data.data.qrCode)
-          setCurrentOrderCode(data.data.orderCode.toString())
-          setShowPaymentModal(true)
-        } else {
-          alert(data.error || 'Lỗi tạo link thanh toán')
-        }
-      } else {
-        // Handle manual bank transfer (existing logic)
-        alert('Yêu cầu nạp tiền đã được gửi thành công!')
-        setDepositAmount('')
+        alert('Hệ thống QR Pay đang tạm thời bảo trì. Vui lòng sử dụng phương thức chuyển khoản ngân hàng.')
+        return
+      } else if (selectedMethod === 'bank') {
+      setShowBankTransferModal(true)
+    } else {
+        alert('Phương thức thanh toán chưa được hỗ trợ')
       }
     } catch (error) {
       console.error('Payment error:', error)
@@ -184,14 +164,80 @@ export default function CreditPage() {
   }
 
   const handleWithdraw = async () => {
+    if (!withdrawAmount || parseInt(withdrawAmount) < 50000) {
+      alert('Số tiền rút tối thiểu là 50,000 VNĐ')
+      return
+    }
+
+    if (parseInt(withdrawAmount) > 10000000) {
+      alert('Số tiền rút tối đa là 10,000,000 VNĐ')
+      return
+    }
+
+    if (parseInt(withdrawAmount) > (user.credit || 0)) {
+      alert('Số dư không đủ để thực hiện giao dịch')
+      return
+    }
+
+    // Validate bank account info for users without saved bank account
+    const hasSavedBankAccount = user.role === 'seller' && user.sellerRequest?.status === 'approved' && user.sellerRequest?.bankAccount
+    if (!hasSavedBankAccount) {
+      if (!bankAccount || bankAccount.trim().length < 6) {
+        alert('Vui lòng nhập thông tin tài khoản ngân hàng hợp lệ')
+        return
+      }
+    }
+
     setIsProcessing(true)
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      const requestBody: any = {
+        amount: parseInt(withdrawAmount)
+      }
+
+      // Use saved bank account if available, otherwise use manual input
+      const hasSavedBankAccount = user.role === 'seller' && user.sellerRequest?.status === 'approved' && user.sellerRequest?.bankAccount
+      if (hasSavedBankAccount && user.sellerRequest?.bankAccount) {
+        requestBody.bankAccount = {
+          accountNumber: user.sellerRequest.bankAccount.accountNumber,
+          accountName: user.sellerRequest.bankAccount.accountHolder,
+          bankName: user.sellerRequest.bankAccount.bankName
+        }
+      } else {
+        // For manual input, we need more info - show a form or use default values
+        requestBody.bankAccount = {
+          accountNumber: bankAccount.trim(),
+          accountName: user.username, // Default to username
+          bankName: 'Vui lòng cập nhật' // User needs to contact admin to update
+        }
+      }
+
+      const response = await fetch('/api/withdrawal/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody)
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        alert(data.message || 'Yêu cầu rút tiền đã được tạo thành công!')
+        setWithdrawAmount('')
+        setBankAccount('')
+        // Refresh user data to get updated credit
+        await refetch()
+      } else {
+        alert(data.error || 'Có lỗi xảy ra khi tạo yêu cầu rút tiền')
+      }
+    } catch (error) {
+      console.error('Withdrawal error:', error)
+      alert('Lỗi kết nối. Vui lòng thử lại!')
+    } finally {
       setIsProcessing(false)
-      alert('Yêu cầu rút tiền đã được gửi thành công!')
-      setWithdrawAmount('')
-      setBankAccount('')
-    }, 2000)
+    }
   }
 
   const copyToClipboard = (text: string) => {
@@ -325,20 +371,15 @@ export default function CreditPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-3">
                         Phương thức thanh toán
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div
-                          onClick={() => setSelectedMethod('payos')}
-                          className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
-                            selectedMethod === 'payos'
-                              ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-lg'
-                              : 'border-gray-200/50 hover:border-gray-300 hover:shadow-md bg-white/50 backdrop-blur-sm'
-                          }`}
+                          className="p-4 border-2 rounded-xl cursor-not-allowed transition-all duration-300 border-gray-200/50 bg-gray-100/50 backdrop-blur-sm opacity-60"
                         >
                           <div className="flex items-center space-x-3">
-                            <QrCode className="h-6 w-6 text-purple-600" />
+                            <QrCode className="h-6 w-6 text-gray-400" />
                             <div>
-                              <p className="font-medium">QR pay</p>
-                              <p className="text-sm text-gray-500">Tức thì, miễn phí</p>
+                              <p className="font-medium text-gray-500">QR pay</p>
+                              <p className="text-sm text-red-500">Tạm thời bảo trì</p>
                             </div>
                           </div>
                         </div>
@@ -358,22 +399,7 @@ export default function CreditPage() {
                             </div>
                           </div>
                         </div>
-                        <div
-                          onClick={() => setSelectedMethod('ewallet')}
-                          className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
-                            selectedMethod === 'ewallet'
-                              ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-lg'
-                              : 'border-gray-200/50 hover:border-gray-300 hover:shadow-md bg-white/50 backdrop-blur-sm'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <Wallet className="h-6 w-6 text-green-600" />
-                            <div>
-                              <p className="font-medium">Ví điện tử</p>
-                              <p className="text-sm text-gray-500">Tức thì, phí 1%</p>
-                            </div>
-                          </div>
-                        </div>
+
                       </div>
                     </div>
 
@@ -453,11 +479,9 @@ export default function CreditPage() {
                           placeholder="Nhập số tài khoản"
                           className="w-full px-4 py-3 border border-gray-200/50 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/50 backdrop-blur-sm transition-all duration-300 hover:bg-white/80"
                         />
-                        {user.role === 'buyer' && (
-                          <p className="text-xs text-amber-600 mt-2">
-                            ⚠️ Bạn cần trở thành seller để có tài khoản rút tiền cố định.
-                          </p>
-                        )}
+                        <p className="text-xs text-blue-600 mt-2">
+                          💡 Để có tài khoản rút tiền cố định, bạn có thể đăng ký trở thành seller.
+                        </p>
                       </div>
                     )}
 
@@ -469,7 +493,7 @@ export default function CreditPage() {
                           <ul className="text-sm text-yellow-700 mt-1 space-y-1">
                             <li>• Phí rút tiền: 2% (tối thiểu 10,000 VNĐ)</li>
                             <li>• Thời gian xử lý: 1-3 ngày làm việc</li>
-                            <li>• Số tiền tối thiểu: 100,000 VNĐ</li>
+                            <li>• Số tiền tối thiểu: 50,000 VNĐ</li>
                           </ul>
                         </div>
                       </div>
@@ -481,7 +505,7 @@ export default function CreditPage() {
                         !withdrawAmount || 
                         isProcessing || 
                         (parseInt(withdrawAmount) > (user.credit || 0)) ||
-                        (user.role !== 'seller' || user.sellerRequest?.status !== 'approved' || !user.sellerRequest?.bankAccount) && !bankAccount
+                        (!(user.role === 'seller' && user.sellerRequest?.status === 'approved' && user.sellerRequest?.bankAccount) && !bankAccount)
                       }
                       className="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-3 px-6 rounded-xl font-medium hover:from-red-700 hover:to-pink-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02]"
                     >
@@ -742,6 +766,123 @@ export default function CreditPage() {
                 <p>• Quét mã QR bằng app ngân hàng</p>
                 <p>• Hoặc nhấn "Mở trang thanh toán"</p>
                 <p>• Thanh toán sẽ được xử lý tự động</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bank Transfer Modal */}
+      {showBankTransferModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200/50">
+            <div className="text-center">
+              <div className="mb-4">
+                <CreditCard className="h-12 w-12 text-blue-600 mx-auto mb-2" />
+                <h3 className="text-xl font-bold text-gray-900">Chuyển khoản ngân hàng</h3>
+                <p className="text-gray-600">Thông tin chuyển khoản</p>
+              </div>
+
+              <div className="mb-6 space-y-4">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50/50 border border-blue-200/50 rounded-xl p-4 backdrop-blur-sm">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-700">Ngân hàng:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-blue-900">{CONTACT_INFO.PAYMENT.BANK_NAME}</span>
+                        <button
+                          onClick={() => copyToClipboard(CONTACT_INFO.PAYMENT.BANK_NAME)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-700">STK:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-blue-900">{CONTACT_INFO.PAYMENT.ACCOUNT_NUMBER}</span>
+                        <button
+                          onClick={() => copyToClipboard(CONTACT_INFO.PAYMENT.ACCOUNT_NUMBER)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-700">Chủ TK:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-blue-900">{CONTACT_INFO.PAYMENT.ACCOUNT_HOLDER}</span>
+                        <button
+                          onClick={() => copyToClipboard(CONTACT_INFO.PAYMENT.ACCOUNT_HOLDER)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-700">Số tiền:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-blue-900">{parseInt(depositAmount || '0').toLocaleString('vi-VN')} VNĐ</span>
+                        <button
+                          onClick={() => copyToClipboard(depositAmount)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-700">Nội dung:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-blue-900">{user.email}</span>
+                        <button
+                          onClick={() => copyToClipboard(user.email)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50/30 border border-yellow-200/50 rounded-xl p-4 backdrop-blur-sm">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-yellow-800">Lưu ý quan trọng</p>
+                      <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                        <li>• Chuyển khoản đúng số tiền và nội dung</li>
+                        <li>• Nội dung chuyển khoản: <strong>{user.email}</strong></li>
+                        <li>• Credit sẽ được cộng sau 5-10 phút</li>
+                        <li>• Liên hệ admin nếu quá 30 phút chưa nhận được</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowBankTransferModal(false)
+                    setDepositAmount('')
+                    alert('Vui lòng chuyển khoản theo thông tin trên. Credit sẽ được cộng tự động sau 5-10 phút.')
+                  }}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
+                >
+                  Đã hiểu, tiến hành chuyển khoản
+                </button>
+                
+                <button
+                  onClick={() => setShowBankTransferModal(false)}
+                  className="w-full bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 py-3 px-4 rounded-xl font-medium hover:from-gray-300 hover:to-gray-400 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]"
+                >
+                  Đóng
+                </button>
               </div>
             </div>
           </div>
