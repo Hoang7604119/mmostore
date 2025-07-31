@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import Payment from '@/models/Payment'
 import CassoTransaction from '@/models/CassoTransaction'
+import { notifyCreditAdded, notifyPaymentReceived } from '@/utils/notificationHelpers'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -194,9 +195,31 @@ async function processTransaction(transaction: any) {
     await payment.save()
 
     // Cập nhật credit cho user
-    await User.findByIdAndUpdate(payment.userId, {
+    const updatedUser = await User.findByIdAndUpdate(payment.userId, {
       $inc: { credit: transaction.amount }
-    })
+    }, { new: true })
+
+    // Gửi notifications
+    try {
+      await notifyPaymentReceived(
+        payment.userId.toString(), 
+        transaction.amount, 
+        'Chuyển khoản ngân hàng', 
+        transaction.reference || transaction.tid
+      )
+      
+      await notifyCreditAdded(
+        payment.userId.toString(), 
+        transaction.amount, 
+        'Chuyển khoản ngân hàng', 
+        updatedUser.credit
+      )
+      
+      console.log(`Notifications sent successfully for user ${payment.userId}`)
+    } catch (notificationError) {
+      console.error('Notification error:', notificationError)
+      // Don't fail the webhook if notification fails
+    }
 
     // Lưu giao dịch Casso
     await CassoTransaction.create({

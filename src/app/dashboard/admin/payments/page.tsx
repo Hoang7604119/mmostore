@@ -32,7 +32,7 @@ export default function AdminPaymentsPage() {
   const [pendingPayments, setPendingPayments] = useState<PaymentSyncData | null>(null)
   const [loadingSync, setLoadingSync] = useState(false)
   const [syncingOrderCode, setSyncingOrderCode] = useState<number | null>(null)
-  const [confirmingWebhook, setConfirmingWebhook] = useState(false)
+
 
   const handleLogout = async () => {
     try {
@@ -106,36 +106,6 @@ export default function AdminPaymentsPage() {
     }
   }
 
-  // Confirm webhook URL with PayOS
-  const confirmWebhookUrl = async () => {
-    try {
-      setConfirmingWebhook(true)
-      const response = await fetch('/api/payment/confirm-webhook', {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json'
-         },
-         credentials: 'include',
-         body: JSON.stringify({
-           webhookUrl: 'https://mmostore.site/api/payment/webhook'
-         })
-       })
-
-      const data = await response.json()
-      
-      if (response.ok) {
-        toast.success(data.message || 'Webhook đã được xác thực thành công')
-      } else {
-        toast.error(data.error || 'Lỗi xác thực webhook')
-      }
-    } catch (error) {
-      console.error('Confirm webhook error:', error)
-      toast.error('Lỗi kết nối')
-    } finally {
-      setConfirmingWebhook(false)
-    }
-  }
-
   // Load data on mount
   useEffect(() => {
     if (user && user.role === 'admin') {
@@ -179,12 +149,12 @@ export default function AdminPaymentsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Webhook Status</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
+            <CardTitle className="text-sm font-medium">Webhook Casso</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">Offline</div>
-            <p className="text-xs text-muted-foreground">Cần kiểm tra cấu hình</p>
+            <div className="text-2xl font-bold text-green-600">Online</div>
+            <p className="text-xs text-muted-foreground">Đang hoạt động bình thường</p>
           </CardContent>
         </Card>
 
@@ -261,46 +231,7 @@ export default function AdminPaymentsPage() {
         </CardContent>
       </Card>
 
-      {/* Webhook Configuration */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Cấu hình Webhook PayOS</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-semibold mb-2">Webhook URL hiện tại</h4>
-              <code className="bg-gray-100 p-2 rounded block text-sm mb-3">
-                https://mmostore.site/api/payment/webhook
-              </code>
-              <Button 
-                onClick={confirmWebhookUrl}
-                disabled={confirmingWebhook}
-                className="w-full sm:w-auto"
-              >
-                {confirmingWebhook ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                    Đang xác thực...
-                  </>
-                ) : (
-                  'Xác thực Webhook với PayOS'
-                )}
-              </Button>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-semibold mb-2 text-blue-800">Hướng dẫn khắc phục</h4>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-700">
-                <li>Nhấn nút "Xác thực Webhook với PayOS" ở trên</li>
-                <li>Nếu vẫn lỗi, kiểm tra webhook URL trong PayOS Dashboard tại <a href="https://my.payos.vn" target="_blank" className="underline">my.payos.vn</a></li>
-                <li>Xem logs server để tìm webhook requests</li>
-                <li>Kiểm tra SSL certificate và firewall</li>
-                <li>Liên hệ PayOS support nếu cần: support@payos.vn</li>
-              </ol>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
       </div>
     </>
   )

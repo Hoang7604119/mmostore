@@ -112,14 +112,7 @@ export async function POST(request: NextRequest) {
         newCredit: paymentUser.credit
       })
 
-      // Send notifications
-      try {
-        await notifyPaymentReceived(paymentUser._id.toString(), payment.amount, 'PayOS', payment.transactionId)
-        await notifyCreditAdded(paymentUser._id.toString(), payment.amount, 'PayOS', paymentUser.credit)
-      } catch (notificationError) {
-        console.error('Notification error:', notificationError)
-        // Don't fail the sync if notification fails
-      }
+      // Notifications disabled for auto sync
 
       console.log(`Payment synced successfully for user ${paymentUser.username}: +${payment.amount} VNĐ (Order: ${orderCode})`)
       

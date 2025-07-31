@@ -725,7 +725,7 @@ export default function CreditPage() {
             <div className="text-center">
               <div className="mb-4">
                 <QrCode className="h-12 w-12 text-purple-600 mx-auto mb-2" />
-                <h3 className="text-xl font-bold text-gray-900">Thanh toán PayOS</h3>
+                <h3 className="text-xl font-bold text-gray-900">Thanh toán bằng mã QR</h3>
                 <p className="text-gray-600">Quét mã QR để thanh toán</p>
               </div>
 
