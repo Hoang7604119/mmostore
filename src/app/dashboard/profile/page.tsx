@@ -125,7 +125,8 @@ export default function ProfilePage() {
     setSaving(true)
     try {
       const updateData: any = {
-        username: formData.username
+        username: formData.username,
+        email: formData.email
       }
 
       if (isChangingPassword) {
