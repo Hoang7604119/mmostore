@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ShoppingCart, Users, Settings, Shield, LogOut, ArrowLeft, Package, Tags, CreditCard, BarChart3, AlertTriangle } from 'lucide-react'
+import { ShoppingCart, Users, Settings, Shield, LogOut, ArrowLeft, Package, Tags, CreditCard, BarChart3, AlertTriangle, DollarSign } from 'lucide-react'
 import { UserData } from '@/types/user'
 import Header from '@/components/Header'
 
@@ -151,6 +151,19 @@ export default function AdminDashboard() {
               <div className="ml-4">
                 <h3 className="font-semibold text-gray-900">Thống Kê Credit</h3>
                 <p className="text-sm text-gray-600">Xem báo cáo tổng hợp credit</p>
+              </div>
+            </div>
+          </Link>
+
+          {/* Payment Management */}
+          <Link href="/dashboard/admin/payments" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer block">
+            <div className="flex items-center">
+              <div className="bg-green-100 p-3 rounded-full">
+                <DollarSign className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <h3 className="font-semibold text-gray-900">Quản Lý Payments</h3>
+                <p className="text-sm text-gray-600">Xem và quản lý thanh toán</p>
               </div>
             </div>
           </Link>

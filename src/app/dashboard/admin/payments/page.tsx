@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RefreshCw, AlertCircle, CheckCircle, Clock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import Header from '@/components/Header'
 
 interface PendingPayment {
   orderCode: number
@@ -26,10 +28,20 @@ interface PaymentSyncData {
 
 export default function AdminPaymentsPage() {
   const { user, loading } = useAuth()
+  const router = useRouter()
   const [pendingPayments, setPendingPayments] = useState<PaymentSyncData | null>(null)
   const [loadingSync, setLoadingSync] = useState(false)
   const [syncingOrderCode, setSyncingOrderCode] = useState<number | null>(null)
   const [confirmingWebhook, setConfirmingWebhook] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   // Redirect if not admin
   useEffect(() => {
@@ -144,9 +156,11 @@ export default function AdminPaymentsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Quản lý Thanh toán</h1>
+    <>
+      <Header user={user} onLogout={handleLogout} />
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quản lý Thanh toán</h1>
         <p className="text-gray-600">Đồng bộ trạng thái thanh toán từ PayOS</p>
       </div>
 
@@ -287,6 +301,7 @@ export default function AdminPaymentsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   )
 }

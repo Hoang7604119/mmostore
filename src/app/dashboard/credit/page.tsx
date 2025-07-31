@@ -169,6 +169,8 @@ export default function CreditPage() {
           setShowPaymentModal(true)
         } else {
           alert(data.error || 'Lỗi tạo thanh toán')
+          setIsProcessing(false)
+          return
         }
       } else if (selectedMethod === 'bank') {
       setShowBankTransferModal(true)
@@ -631,10 +633,7 @@ export default function CreditPage() {
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Thao tác nhanh</h3>
               <div className="space-y-3">
-                <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200/50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]">
-                  <QrCode className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm font-medium">Quét mã QR</span>
-                </button>
+
                 <button 
                   onClick={() => {
                     // Scroll to transaction history section
