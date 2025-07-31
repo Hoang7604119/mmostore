@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb'
 import Review from '@/models/Review'
 import { verifyToken } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/seller/reviews - Get reviews for seller's products
 export async function GET(request: NextRequest) {
   try {
