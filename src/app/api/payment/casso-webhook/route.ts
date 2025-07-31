@@ -48,17 +48,31 @@ async function processTransaction(transaction: any) {
     let orderCodeSuffix = null
     
     if (numberMatches) {
-      // Tìm kiếm orderCode theo thứ tự ưu tiên:
-      // 1. Số có độ dài 13 chữ số (timestamp format như 1753979636911)
-      // 2. Số có độ dài 10-12 chữ số
-      // 3. Số có độ dài 8-9 chữ số và lấy 8 số cuối
+      console.log(`All numbers found in description: ${numberMatches.join(', ')}`)
       
-      // Ưu tiên số có 13 chữ số (timestamp format)
+      // Tìm kiếm orderCode theo thứ tự ưu tiên:
+      // 1. Số có độ dài chính xác 8 chữ số (description từ PayOS)
+      // 2. Số có độ dài 13 chữ số (timestamp format) và lấy 8 số cuối
+      // 3. Số có độ dài 10-12 chữ số và lấy 8 số cuối
+      // 4. Số có độ dài >= 8 chữ số và lấy 8 số cuối
+      
+      // Ưu tiên số có chính xác 8 chữ số (description từ PayOS)
       for (const match of numberMatches) {
-        if (match.length === 13) {
-          orderCodeSuffix = match.slice(-8) // Lấy 8 số cuối
-          console.log(`Found 13-digit number (likely orderCode): ${match}, using suffix: ${orderCodeSuffix}`)
+        if (match.length === 8) {
+          orderCodeSuffix = match
+          console.log(`Found 8-digit number (PayOS description): ${match}, using as suffix: ${orderCodeSuffix}`)
           break
+        }
+      }
+      
+      // Nếu không tìm thấy số 8 chữ số, tìm số 13 chữ số (timestamp format)
+      if (!orderCodeSuffix) {
+        for (const match of numberMatches) {
+          if (match.length === 13) {
+            orderCodeSuffix = match.slice(-8) // Lấy 8 số cuối
+            console.log(`Found 13-digit number (likely orderCode): ${match}, using suffix: ${orderCodeSuffix}`)
+            break
+          }
         }
       }
       
