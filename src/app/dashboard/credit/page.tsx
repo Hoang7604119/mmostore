@@ -148,7 +148,28 @@ export default function CreditPage() {
 
     try {
       if (selectedMethod === 'payos') {
-        alert('Hệ thống QR Pay đang tạm thời bảo trì. Vui lòng sử dụng phương thức chuyển khoản ngân hàng.')
+        // Create PayOS payment
+        const response = await fetch('/api/payment/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            amount: parseInt(depositAmount)
+          })
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          setPaymentUrl(data.data.paymentUrl)
+          setQrCode(data.data.qrCode)
+          setCurrentOrderCode(data.data.orderCode.toString())
+          setShowPaymentModal(true)
+        } else {
+          alert(data.error || 'Lỗi tạo link thanh toán')
+        }
         return
       } else if (selectedMethod === 'bank') {
       setShowBankTransferModal(true)
@@ -373,13 +394,18 @@ export default function CreditPage() {
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div
-                          className="p-4 border-2 rounded-xl cursor-not-allowed transition-all duration-300 border-gray-200/50 bg-gray-100/50 backdrop-blur-sm opacity-60"
+                          onClick={() => setSelectedMethod('payos')}
+                          className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                            selectedMethod === 'payos'
+                              ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-lg'
+                              : 'border-gray-200/50 hover:border-gray-300 hover:shadow-md bg-white/50 backdrop-blur-sm'
+                          }`}
                         >
                           <div className="flex items-center space-x-3">
-                            <QrCode className="h-6 w-6 text-gray-400" />
+                            <QrCode className="h-6 w-6 text-blue-600" />
                             <div>
-                              <p className="font-medium text-gray-500">QR pay</p>
-                              <p className="text-sm text-red-500">Tạm thời bảo trì</p>
+                              <p className="font-medium">QR pay</p>
+                              <p className="text-sm text-gray-500">Nhanh chóng, tiện lợi</p>
                             </div>
                           </div>
                         </div>
