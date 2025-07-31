@@ -66,7 +66,35 @@ export async function POST(request: NextRequest) {
     await connectDB()
     
     const body = await request.text()
-    webhookData = JSON.parse(body)
+    console.log(`[${timestamp}] Raw body:`, body)
+    
+    // Handle empty body (for endpoint validation)
+    if (!body || body.trim() === '') {
+      console.log(`[${timestamp}] Empty body received - likely endpoint validation`)
+      return NextResponse.json(
+        { 
+          message: 'PayOS webhook endpoint is active',
+          timestamp: new Date().toISOString(),
+          status: 'ok'
+        },
+        { status: 200 }
+      )
+    }
+    
+    try {
+      webhookData = JSON.parse(body)
+    } catch (parseError) {
+      console.error(`[${timestamp}] JSON parse error:`, parseError)
+      return NextResponse.json(
+        { 
+          message: 'PayOS webhook endpoint is active',
+          timestamp: new Date().toISOString(),
+          error: 'Invalid JSON payload'
+        },
+        { status: 200 }
+      )
+    }
+    
     console.log(`[${timestamp}] PayOS Webhook received:`, JSON.stringify(webhookData, null, 2))
     console.log(`[${timestamp}] Request headers:`, Object.fromEntries(request.headers.entries()))
     console.log(`[${timestamp}] Request URL:`, request.url)
@@ -310,11 +338,27 @@ export async function GET(request: NextRequest) {
   console.log(`[${timestamp}] Request headers:`, Object.fromEntries(request.headers.entries()))
   console.log(`[${timestamp}] Request URL:`, request.url)
   
+  // Xử lý validation request từ PayOS
+  const url = new URL(request.url)
+  const challenge = url.searchParams.get('challenge')
+  const token = url.searchParams.get('token')
+  
+  if (challenge) {
+    console.log(`[${timestamp}] PayOS validation challenge received:`, challenge)
+    return new NextResponse(challenge, { status: 200 })
+  }
+  
+  if (token) {
+    console.log(`[${timestamp}] PayOS validation token received:`, token)
+    return new NextResponse(token, { status: 200 })
+  }
+  
   return NextResponse.json(
     { 
       message: 'PayOS webhook endpoint is active',
       timestamp: timestamp,
-      url: request.url
+      url: request.url,
+      ready: true
     },
     { status: 200 }
   )
