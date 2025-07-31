@@ -148,8 +148,28 @@ export default function CreditPage() {
 
     try {
       if (selectedMethod === 'payos') {
-        alert('Hệ thống QR Pay đang tạm thời bảo trì. Vui lòng sử dụng phương thức chuyển khoản ngân hàng.')
-        return
+        const response = await fetch('/api/payment/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            amount: parseInt(depositAmount),
+            paymentMethod: 'payos'
+          })
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          setQrCode(data.data.qrCode)
+          setPaymentUrl(data.data.checkoutUrl)
+          setCurrentOrderCode(data.data.orderCode)
+          setShowPaymentModal(true)
+        } else {
+          alert(data.error || 'Lỗi tạo thanh toán')
+        }
       } else if (selectedMethod === 'bank') {
       setShowBankTransferModal(true)
     } else {
@@ -259,7 +279,22 @@ export default function CreditPage() {
 
     setIsCheckingStatus(true)
     try {
-      const response = await fetch(`/api/payment/status/${currentOrderCode}`)
+      // Gọi API đồng bộ Casso trước
+      const syncResponse = await fetch('/api/payment/sync-casso', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          orderCode: currentOrderCode
+        })
+      })
+      
+      // Sau đó kiểm tra trạng thái thanh toán
+      const response = await fetch(`/api/payment/status?orderCode=${currentOrderCode}`, {
+        credentials: 'include'
+      })
       const data = await response.json()
 
       if (response.status === 429) {
@@ -267,20 +302,13 @@ export default function CreditPage() {
         return
       }
 
-      if (data.success) {
-        if (data.data.status === 'PAID') {
-          alert('Thanh toán thành công!')
-          closePaymentModal()
-          // Refresh user data to get updated credit
-          await refetch()
-        } else if (data.data.status === 'CANCELLED') {
-          alert('Thanh toán đã bị hủy')
-          closePaymentModal()
-        } else {
-          alert('Thanh toán đang được xử lý...')
-        }
+      if (data.success && data.status === 'paid') {
+        alert('Thanh toán thành công!')
+        closePaymentModal()
+        // Refresh user data to get updated credit
+        window.location.reload()
       } else {
-        alert(data.error || 'Không thể kiểm tra trạng thái thanh toán')
+        alert('Thanh toán chưa được xác nhận. Vui lòng thử lại sau.')
       }
     } catch (error) {
       console.error('Check payment status error:', error)
@@ -373,13 +401,18 @@ export default function CreditPage() {
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div
-                          className="p-4 border-2 rounded-xl cursor-not-allowed transition-all duration-300 border-gray-200/50 bg-gray-100/50 backdrop-blur-sm opacity-60"
+                          onClick={() => setSelectedMethod('payos')}
+                          className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                            selectedMethod === 'payos'
+                              ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-lg'
+                              : 'border-gray-200/50 hover:border-gray-300 hover:shadow-md bg-white/50 backdrop-blur-sm'
+                          }`}
                         >
                           <div className="flex items-center space-x-3">
-                            <QrCode className="h-6 w-6 text-gray-400" />
+                            <QrCode className="h-6 w-6 text-blue-600" />
                             <div>
-                              <p className="font-medium text-gray-500">QR pay</p>
-                              <p className="text-sm text-red-500">Tạm thời bảo trì</p>
+                              <p className="font-medium">QR pay</p>
+                              <p className="text-sm text-gray-500">Tức thì, miễn phí</p>
                             </div>
                           </div>
                         </div>

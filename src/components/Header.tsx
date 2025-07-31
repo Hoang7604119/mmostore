@@ -258,7 +258,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
 
               {/* Dropdown Menu - Modern & Clean */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-3 w-72 sm:w-80 bg-gradient-to-br from-white via-blue-50/30 to-white backdrop-blur-2xl rounded-3xl shadow-2xl border border-blue-100/50 py-4 z-[70] animate-in slide-in-from-top-2 duration-300 max-h-[85vh] overflow-y-auto">
+                <div className="absolute right-0 mt-3 w-72 sm:w-80 bg-gradient-to-br from-white via-blue-50/30 to-white backdrop-blur-md rounded-3xl shadow-2xl border border-blue-100/50 py-4 z-[70] animate-in slide-in-from-top-2 duration-300 max-h-[85vh] overflow-y-auto">
                   {/* Mobile User Info - Only visible on mobile */}
                   <div className="sm:hidden px-4 py-3 border-b border-gradient-to-r from-transparent via-blue-100/50 to-transparent">
                     <div className="flex items-center space-x-3">
