@@ -43,9 +43,31 @@ async function processTransaction(transaction: any) {
 
     // Tìm 8 số cuối của orderCode từ description
     const description = transaction.description || ''
-    const orderCodeMatch = description.match(/\b(\d{8})\b/)
+    // Tìm tất cả các số trong description và lấy 8 số cuối nếu có
+    const numberMatches = description.match(/\d+/g)
+    let orderCodeSuffix = null
     
-    if (!orderCodeMatch) {
+    if (numberMatches) {
+      // Tìm số có ít nhất 8 chữ số
+      for (const match of numberMatches) {
+        if (match.length >= 8) {
+          orderCodeSuffix = match.slice(-8) // Lấy 8 số cuối
+          break
+        }
+      }
+      
+      // Nếu không tìm thấy số nào có ít nhất 8 chữ số, thử tìm số có 5 chữ số trở lên
+      if (!orderCodeSuffix) {
+        for (const match of numberMatches) {
+          if (match.length >= 5) {
+            orderCodeSuffix = match
+            break
+          }
+        }
+      }
+    }
+    
+    if (!orderCodeSuffix) {
       // Lưu giao dịch nhưng không xử lý
       await CassoTransaction.create({
         cassoId: transaction.id,
@@ -57,7 +79,7 @@ async function processTransaction(transaction: any) {
         bankSubAccId: transaction.bank_sub_acc_id,
         subAccId: transaction.sub_acc_id,
         processed: false,
-        error: 'Không tìm thấy mã đơn hàng (8 số) trong mô tả'
+        error: 'Không tìm thấy mã đơn hàng trong mô tả'
       })
       console.log(`No order code found in transaction ${transaction.id}: ${description}`)
       return { 
@@ -66,14 +88,14 @@ async function processTransaction(transaction: any) {
         orderCode: null
       }
     }
-
-    const orderCodeSuffix = orderCodeMatch[1]
     console.log(`Found order code suffix: ${orderCodeSuffix} in transaction ${transaction.id}`)
     
     // Tìm payment record theo 8 số cuối của orderCode
-    const payment = await Payment.findOne({ 
-      orderCode: { $regex: `${orderCodeSuffix}$` },
-      status: 'pending'
+    // Chuyển orderCode thành string để so sánh
+    const payments = await Payment.find({ status: 'pending' })
+    const payment = payments.find(p => {
+      const orderCodeStr = p.orderCode.toString()
+      return orderCodeStr.endsWith(orderCodeSuffix)
     })
     
     if (!payment) {
