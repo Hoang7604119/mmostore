@@ -47,13 +47,13 @@ async function processCassoTransaction(transaction: any) {
       // Lưu giao dịch nhưng không xử lý
       await CassoTransaction.create({
         cassoId: transaction.id,
-        tid: transaction.tid,
+        tid: transaction.reference || transaction.tid,
         description: transaction.description,
         amount: transaction.amount,
-        cusumBalance: transaction.cusum_balance,
-        when: new Date(transaction.when),
-        bankSubAccId: transaction.bank_sub_acc_id,
-        subAccId: transaction.sub_acc_id,
+        cusumBalance: transaction.runningBalance || transaction.cusum_balance || 0,
+        when: new Date(transaction.transactionDateTime || transaction.when),
+        bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
+        subAccId: transaction.subAccId || transaction.sub_acc_id,
         processed: false,
         error: 'Không tìm thấy username trong mô tả'
       })
@@ -68,13 +68,13 @@ async function processCassoTransaction(transaction: any) {
       // Lưu giao dịch nhưng không xử lý
       await CassoTransaction.create({
         cassoId: transaction.id,
-        tid: transaction.tid,
+        tid: transaction.reference || transaction.tid,
         description: transaction.description,
         amount: transaction.amount,
-        cusumBalance: transaction.cusum_balance,
-        when: new Date(transaction.when),
-        bankSubAccId: transaction.bank_sub_acc_id,
-        subAccId: transaction.sub_acc_id,
+        cusumBalance: transaction.runningBalance || transaction.cusum_balance || 0,
+        when: new Date(transaction.transactionDateTime || transaction.when),
+        bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
+        subAccId: transaction.subAccId || transaction.sub_acc_id,
         processed: false,
         error: `Không tìm thấy user với username: ${username}`
       })
@@ -90,7 +90,7 @@ async function processCassoTransaction(transaction: any) {
       status: 'paid',
       paymentMethod: 'bank',
       description: `Nạp tiền qua Casso - ${transaction.description}`,
-      transactionId: transaction.tid
+      transactionId: transaction.reference || transaction.tid
     })
 
     // Cập nhật credit cho user
@@ -101,13 +101,13 @@ async function processCassoTransaction(transaction: any) {
     // Lưu giao dịch Casso
     await CassoTransaction.create({
       cassoId: transaction.id,
-      tid: transaction.tid,
+      tid: transaction.reference || transaction.tid,
       description: transaction.description,
       amount: transaction.amount,
-      cusumBalance: transaction.cusum_balance,
-      when: new Date(transaction.when),
-      bankSubAccId: transaction.bank_sub_acc_id,
-      subAccId: transaction.sub_acc_id,
+      cusumBalance: transaction.runningBalance || transaction.cusum_balance || 0,
+      when: new Date(transaction.transactionDateTime || transaction.when),
+      bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
+      subAccId: transaction.subAccId || transaction.sub_acc_id,
       processed: true,
       userId: user._id,
       paymentId: payment._id
