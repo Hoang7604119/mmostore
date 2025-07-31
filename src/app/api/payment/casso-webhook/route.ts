@@ -71,13 +71,13 @@ async function processTransaction(transaction: any) {
       // Lưu giao dịch nhưng không xử lý
       await CassoTransaction.create({
         cassoId: transaction.id,
-        tid: transaction.tid,
+        tid: transaction.reference || transaction.tid,
         description: transaction.description,
         amount: transaction.amount,
-        cusumBalance: transaction.cusum_balance,
-        when: new Date(transaction.when),
-        bankSubAccId: transaction.bank_sub_acc_id,
-        subAccId: transaction.sub_acc_id,
+        cusumBalance: transaction.runningBalance || transaction.cusum_balance || 0,
+        when: new Date(transaction.transactionDateTime || transaction.when),
+        bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
+        subAccId: transaction.subAccId || transaction.sub_acc_id,
         processed: false,
         error: 'Không tìm thấy mã đơn hàng trong mô tả'
       })
@@ -102,13 +102,13 @@ async function processTransaction(transaction: any) {
       // Lưu giao dịch nhưng không xử lý
       await CassoTransaction.create({
         cassoId: transaction.id,
-        tid: transaction.tid,
+        tid: transaction.reference || transaction.tid,
         description: transaction.description,
         amount: transaction.amount,
-        cusumBalance: transaction.cusum_balance,
-        when: new Date(transaction.when),
-        bankSubAccId: transaction.bank_sub_acc_id,
-        subAccId: transaction.sub_acc_id,
+        cusumBalance: transaction.runningBalance || transaction.cusum_balance || 0,
+        when: new Date(transaction.transactionDateTime || transaction.when),
+        bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
+        subAccId: transaction.subAccId || transaction.sub_acc_id,
         processed: false,
         error: `Không tìm thấy payment với orderCode kết thúc bằng: ${orderCodeSuffix}`
       })
@@ -124,13 +124,13 @@ async function processTransaction(transaction: any) {
     if (payment.amount !== transaction.amount) {
       await CassoTransaction.create({
         cassoId: transaction.id,
-        tid: transaction.tid,
+        tid: transaction.reference || transaction.tid,
         description: transaction.description,
         amount: transaction.amount,
-        cusumBalance: transaction.cusum_balance,
-        when: new Date(transaction.when),
-        bankSubAccId: transaction.bank_sub_acc_id,
-        subAccId: transaction.sub_acc_id,
+        cusumBalance: transaction.runningBalance || transaction.cusum_balance || 0,
+        when: new Date(transaction.transactionDateTime || transaction.when),
+        bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
+        subAccId: transaction.subAccId || transaction.sub_acc_id,
         processed: false,
         error: `Số tiền không khớp: expected ${payment.amount}, received ${transaction.amount}`
       })
@@ -146,7 +146,7 @@ async function processTransaction(transaction: any) {
 
     // Cập nhật payment status
     payment.status = 'paid'
-    payment.transactionId = transaction.tid
+    payment.transactionId = transaction.reference || transaction.tid
     payment.description = `${payment.description} - Casso: ${transaction.description}`
     await payment.save()
 
@@ -158,13 +158,13 @@ async function processTransaction(transaction: any) {
     // Lưu giao dịch Casso
     await CassoTransaction.create({
       cassoId: transaction.id,
-      tid: transaction.tid,
+      tid: transaction.reference || transaction.tid,
       description: transaction.description,
       amount: transaction.amount,
-      cusumBalance: transaction.cusum_balance,
-      when: new Date(transaction.when),
-      bankSubAccId: transaction.bank_sub_acc_id,
-      subAccId: transaction.sub_acc_id,
+      cusumBalance: transaction.runningBalance || transaction.cusum_balance || 0,
+      when: new Date(transaction.transactionDateTime || transaction.when),
+      bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
+      subAccId: transaction.subAccId || transaction.sub_acc_id,
       processed: true,
       userId: payment.userId,
       paymentId: payment._id
@@ -185,13 +185,13 @@ async function processTransaction(transaction: any) {
     try {
       await CassoTransaction.create({
         cassoId: transaction.id,
-        tid: transaction.tid,
+        tid: transaction.reference || transaction.tid,
         description: transaction.description,
         amount: transaction.amount,
-        cusumBalance: transaction.cusum_balance,
-        when: new Date(transaction.when),
-        bankSubAccId: transaction.bank_sub_acc_id,
-        subAccId: transaction.sub_acc_id,
+        cusumBalance: transaction.runningBalance || transaction.cusum_balance || 0,
+        when: new Date(transaction.transactionDateTime || transaction.when),
+        bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
+        subAccId: transaction.subAccId || transaction.sub_acc_id,
         processed: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       })
@@ -235,24 +235,65 @@ export async function POST(request: NextRequest) {
     await connectDB()
     console.log(`[${timestamp}] Connected to database`)
     
-    // Xử lý từng giao dịch trong data
-    const transactions = body.data || []
-    console.log(`[${timestamp}] Processing ${transactions.length} transactions`)
+    // Xử lý cấu trúc dữ liệu linh hoạt
+    let transactions = []
+    
+    // Trường hợp 1: Cấu trúc {"error": 0, "data": {...}}
+    if (body.error === 0 && body.data) {
+      if (Array.isArray(body.data)) {
+        transactions = body.data
+      } else {
+        transactions = [body.data]
+      }
+    }
+    // Trường hợp 2: body.data là mảng
+    else if (body.data && Array.isArray(body.data)) {
+      transactions = body.data
+    }
+    // Trường hợp 3: body.data là một đối tượng
+    else if (body.data && typeof body.data === 'object') {
+      transactions = [body.data]
+    }
+    // Trường hợp 4: toàn bộ body là một giao dịch
+    else if (body.id && body.description) {
+      transactions = [body]
+    }
+    // Trường hợp 5: body là mảng các giao dịch
+    else if (Array.isArray(body)) {
+      transactions = body
+    }
+
+    console.log(`Processing ${transactions.length} transactions`)
+     console.log('Transactions data:', JSON.stringify(transactions, null, 2))
     
     let successCount = 0
     let failureCount = 0
     const results = []
     
-    for (const transaction of transactions) {
-      console.log(`[${timestamp}] Processing transaction:`, transaction.id)
-      const result = await processTransaction(transaction)
-      results.push(result)
-      
-      if (result.status === 'success') {
-        successCount++
-      } else {
-        failureCount++
+    if (transactions && transactions.length > 0) {
+      for (const transaction of transactions) {
+        try {
+          console.log(`[${timestamp}] Processing transaction:`, transaction.id)
+          const result = await processTransaction(transaction)
+          results.push(result)
+          
+          if (result.status === 'success') {
+            successCount++
+          } else {
+            failureCount++
+          }
+        } catch (error) {
+          console.error('Error processing transaction:', error)
+          failureCount++
+          results.push({
+            status: 'error',
+            transactionId: transaction.id,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          })
+        }
       }
+    } else {
+      console.log('No transactions to process')
     }
     
     console.log(`[${timestamp}] Processing complete - Success: ${successCount}, Failures: ${failureCount}`)
