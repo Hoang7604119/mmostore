@@ -99,7 +99,20 @@ export async function POST(request: NextRequest) {
     console.log(`[${timestamp}] Request headers:`, Object.fromEntries(request.headers.entries()))
     console.log(`[${timestamp}] Request URL:`, request.url)
     
-    // Verify webhook signature theo chuẩn PayOS
+    // Check if this is a PayOS validation request
+    if (webhookData.test === true || (typeof webhookData === 'object' && Object.keys(webhookData).length === 1 && webhookData.test)) {
+      console.log(`[${timestamp}] PayOS validation request detected - responding with success`)
+      return NextResponse.json(
+        { 
+          message: 'PayOS webhook endpoint validated successfully',
+          timestamp: new Date().toISOString(),
+          status: 'ok'
+        },
+        { status: 200 }
+      )
+    }
+    
+    // Verify webhook signature theo chuẩn PayOS cho real webhook data
     let isValidSignature = false
     try {
       // Sử dụng PayOS SDK để verify
