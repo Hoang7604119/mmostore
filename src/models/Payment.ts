@@ -60,7 +60,6 @@ const PaymentSchema = new mongoose.Schema<IPayment>({
 
 // Index for faster queries
 PaymentSchema.index({ userId: 1, createdAt: -1 })
-PaymentSchema.index({ orderCode: 1 })
 PaymentSchema.index({ status: 1 })
 
 const Payment = mongoose.models.Payment || mongoose.model<IPayment>('Payment', PaymentSchema)

@@ -33,8 +33,7 @@ const OrderSchema = new Schema<IOrder>({
   orderNumber: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   buyerId: {
     type: Schema.Types.ObjectId,
@@ -116,11 +115,10 @@ const OrderSchema = new Schema<IOrder>({
   timestamps: true
 })
 
-// Compound indexes for efficient queries
+// Index for faster queries
 OrderSchema.index({ buyerId: 1, createdAt: -1 })
 OrderSchema.index({ sellerId: 1, createdAt: -1 })
 OrderSchema.index({ status: 1, createdAt: -1 })
-OrderSchema.index({ orderNumber: 1 }, { unique: true })
 
 // Static method to generate order number
 OrderSchema.statics.generateOrderNumber = async function() {
