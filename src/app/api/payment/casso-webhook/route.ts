@@ -41,11 +41,11 @@ async function processTransaction(transaction: any) {
       }
     }
 
-    // Tìm username từ description
+    // Tìm 8 số cuối của orderCode từ description
     const description = transaction.description || ''
-    const usernameMatch = description.match(/\b([a-zA-Z0-9_]{3,30})\b/)
+    const orderCodeMatch = description.match(/\b(\d{8})\b/)
     
-    if (!usernameMatch) {
+    if (!orderCodeMatch) {
       // Lưu giao dịch nhưng không xử lý
       await CassoTransaction.create({
         cassoId: transaction.id,
@@ -57,57 +57,79 @@ async function processTransaction(transaction: any) {
         bankSubAccId: transaction.bank_sub_acc_id,
         subAccId: transaction.sub_acc_id,
         processed: false,
-        error: 'Không tìm thấy username trong mô tả'
+        error: 'Không tìm thấy mã đơn hàng (8 số) trong mô tả'
       })
-      console.log(`No username found in transaction ${transaction.id}: ${description}`)
+      console.log(`No order code found in transaction ${transaction.id}: ${description}`)
       return { 
-        status: 'no_username', 
+        status: 'no_order_code', 
         transactionId: transaction.id,
-        username: null
+        orderCode: null
       }
     }
 
-    const username = usernameMatch[1]
-    console.log(`Found username: ${username} in transaction ${transaction.id}`)
+    const orderCodeSuffix = orderCodeMatch[1]
+    console.log(`Found order code suffix: ${orderCodeSuffix} in transaction ${transaction.id}`)
     
-    // Tìm user theo username
-    const user = await User.findOne({ username: username })
-    if (!user) {
-      // Lưu giao dịch nhưng không xử lý
-      await CassoTransaction.create({
-        cassoId: transaction.id,
-        tid: transaction.tid,
-        description: transaction.description,
-        amount: transaction.amount,
-        cusumBalance: transaction.cusum_balance,
-        when: new Date(transaction.when),
-        bankSubAccId: transaction.bank_sub_acc_id,
-        subAccId: transaction.sub_acc_id,
-        processed: false,
-        error: `Không tìm thấy user với username: ${username}`
-      })
-      console.log(`User not found for username: ${username}`)
-      return { 
-        status: 'user_not_found', 
-        transactionId: transaction.id,
-        username: username
-      }
-    }
-
-    // Tạo payment record
-    const orderCode = Date.now() // Generate unique order code
-    const payment = await Payment.create({
-      userId: user._id,
-      orderCode: orderCode,
-      amount: transaction.amount,
-      status: 'paid',
-      paymentMethod: 'bank',
-      description: `Nạp tiền qua Casso - ${transaction.description}`,
-      transactionId: transaction.tid
+    // Tìm payment record theo 8 số cuối của orderCode
+    const payment = await Payment.findOne({ 
+      orderCode: { $regex: `${orderCodeSuffix}$` },
+      status: 'pending'
     })
+    
+    if (!payment) {
+      // Lưu giao dịch nhưng không xử lý
+      await CassoTransaction.create({
+        cassoId: transaction.id,
+        tid: transaction.tid,
+        description: transaction.description,
+        amount: transaction.amount,
+        cusumBalance: transaction.cusum_balance,
+        when: new Date(transaction.when),
+        bankSubAccId: transaction.bank_sub_acc_id,
+        subAccId: transaction.sub_acc_id,
+        processed: false,
+        error: `Không tìm thấy payment với orderCode kết thúc bằng: ${orderCodeSuffix}`
+      })
+      console.log(`Payment not found for order code suffix: ${orderCodeSuffix}`)
+      return { 
+        status: 'payment_not_found', 
+        transactionId: transaction.id,
+        orderCode: orderCodeSuffix
+      }
+    }
+
+    // Kiểm tra số tiền có khớp không
+    if (payment.amount !== transaction.amount) {
+      await CassoTransaction.create({
+        cassoId: transaction.id,
+        tid: transaction.tid,
+        description: transaction.description,
+        amount: transaction.amount,
+        cusumBalance: transaction.cusum_balance,
+        when: new Date(transaction.when),
+        bankSubAccId: transaction.bank_sub_acc_id,
+        subAccId: transaction.sub_acc_id,
+        processed: false,
+        error: `Số tiền không khớp: expected ${payment.amount}, received ${transaction.amount}`
+      })
+      console.log(`Amount mismatch for payment ${payment.orderCode}: expected ${payment.amount}, received ${transaction.amount}`)
+      return { 
+        status: 'amount_mismatch', 
+        transactionId: transaction.id,
+        orderCode: orderCodeSuffix,
+        expectedAmount: payment.amount,
+        receivedAmount: transaction.amount
+      }
+    }
+
+    // Cập nhật payment status
+    payment.status = 'paid'
+    payment.transactionId = transaction.tid
+    payment.description = `${payment.description} - Casso: ${transaction.description}`
+    await payment.save()
 
     // Cập nhật credit cho user
-    await User.findByIdAndUpdate(user._id, {
+    await User.findByIdAndUpdate(payment.userId, {
       $inc: { credit: transaction.amount }
     })
 
@@ -122,16 +144,16 @@ async function processTransaction(transaction: any) {
       bankSubAccId: transaction.bank_sub_acc_id,
       subAccId: transaction.sub_acc_id,
       processed: true,
-      userId: user._id,
+      userId: payment.userId,
       paymentId: payment._id
     })
 
-    console.log(`Successfully processed transaction ${transaction.id} for user ${username}, amount: ${transaction.amount}`)
+    console.log(`Successfully processed transaction ${transaction.id} for orderCode ${payment.orderCode}, amount: ${transaction.amount}`)
     
     return { 
       status: 'success', 
       transactionId: transaction.id,
-      username: username,
+      orderCode: payment.orderCode,
       amount: transaction.amount,
       paymentId: payment._id
     }
@@ -178,8 +200,8 @@ export async function POST(request: NextRequest) {
     // Xác thực chữ ký (có thể bỏ qua khi test)
     const signature = headers['x-secure-token']
     const secretKey = process.env.CASSO_SECURITY_KEY
-    
-    if (!verifySignature(JSON.stringify(body), signature, secretKey)) {
+
+    if (!secretKey || !verifySignature(JSON.stringify(body), signature, secretKey)) {
       console.error(`[${timestamp}] Invalid signature`)
       return NextResponse.json(
         { error: 'Invalid signature' },
