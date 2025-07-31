@@ -81,25 +81,29 @@ async function processCassoTransaction(transaction: any) {
       return { processed: false, error: 'Không tìm thấy user' }
     }
 
-    // Tạo payment record
-    const orderCode = Date.now() // Generate unique order code
-    const payment = await Payment.create({
-      userId: user._id,
-      orderCode: orderCode,
-      amount: transaction.amount,
-      status: 'paid',
-      paymentMethod: 'bank',
-      description: `Nạp tiền qua Casso - ${transaction.description}`,
-      transactionId: transaction.reference || transaction.tid
-    })
+    let payment = null
+    
+    // Chỉ tạo payment record và cộng credit khi amount dương
+    if (transaction.amount > 0) {
+      const orderCode = Date.now() // Generate unique order code
+      payment = await Payment.create({
+        userId: user._id,
+        orderCode: orderCode,
+        amount: transaction.amount,
+        status: 'paid',
+        paymentMethod: 'bank',
+        description: `Nạp tiền qua Casso - ${transaction.description}`,
+        transactionId: transaction.reference || transaction.tid
+      })
 
-    // Cập nhật credit cho user
-    await User.findByIdAndUpdate(user._id, {
-      $inc: { credit: transaction.amount }
-    })
+      // Cập nhật credit cho user
+      await User.findByIdAndUpdate(user._id, {
+        $inc: { credit: transaction.amount }
+      })
+    }
 
     // Lưu giao dịch Casso
-    await CassoTransaction.create({
+    const cassoTransactionData: any = {
       cassoId: transaction.id,
       tid: transaction.reference || transaction.tid,
       description: transaction.description,
@@ -109,16 +113,23 @@ async function processCassoTransaction(transaction: any) {
       bankSubAccId: transaction.bankSubAccId || transaction.bank_sub_acc_id,
       subAccId: transaction.subAccId || transaction.sub_acc_id,
       processed: true,
-      userId: user._id,
-      paymentId: payment._id
-    })
+      userId: user._id
+    }
+    
+    // Chỉ thêm paymentId nếu có payment (amount dương)
+    if (payment) {
+      cassoTransactionData.paymentId = payment._id
+    }
+    
+    await CassoTransaction.create(cassoTransactionData)
 
     return { 
       processed: true, 
       userId: user._id, 
       username: username, 
       amount: transaction.amount,
-      paymentId: payment._id
+      paymentId: payment?._id || null,
+      note: transaction.amount <= 0 ? 'Giao dịch âm - không cộng credit' : 'Đã cộng credit'
     }
   } catch (error) {
     console.error('Error processing Casso transaction:', error)

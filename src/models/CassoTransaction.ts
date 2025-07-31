@@ -36,8 +36,7 @@ const CassoTransactionSchema = new Schema<ICassoTransaction>({
   },
   amount: {
     type: Number,
-    required: true,
-    min: 0
+    required: true
   },
   cusumBalance: {
     type: Number,
