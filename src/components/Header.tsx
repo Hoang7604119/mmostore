@@ -218,7 +218,11 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <div className="flex items-center">
             <Link href="/" className="flex items-center group hover:scale-105 transition-all duration-300">
               <div className="relative">
-                <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 group-hover:text-blue-700 transition-colors duration-300" />
+                <img 
+                  src="/favicon.svg" 
+                  alt="MMO Store Logo" 
+                  className="h-6 w-6 sm:h-8 sm:w-8 group-hover:scale-110 transition-transform duration-300"
+                />
                 <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-lg group-hover:bg-blue-500/30 transition-all duration-300"></div>
               </div>
               <span className="ml-2 sm:ml-3 text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-indigo-700 transition-all duration-300 hidden xs:block">{CONTACT_INFO.COMPANY_NAME}</span>
