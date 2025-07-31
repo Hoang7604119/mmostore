@@ -34,11 +34,11 @@ export default function TermsPage() {
       )}
       <div className="flex-1">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12 sm:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-4xl font-bold mb-4">Điều khoản sử dụng</h1>
-              <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-4">Điều khoản sử dụng</h1>
+              <p className="text-lg sm:text-xl text-blue-100 max-w-2xl mx-auto">
                 Vui lòng đọc kỹ các điều khoản và điều kiện sử dụng dịch vụ của chúng tôi.
               </p>
             </div>
@@ -46,14 +46,14 @@ export default function TermsPage() {
         </div>
 
         {/* Terms Content */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="bg-white rounded-lg shadow-lg p-8 space-y-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 space-y-6 sm:space-y-8">
             
             {/* Introduction */}
             <div className="border-b border-gray-200 pb-6">
               <div className="flex items-center space-x-3 mb-4">
-                <FileText className="w-6 h-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-900">1. Giới thiệu</h2>
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">1. Giới thiệu</h2>
               </div>
               <p className="text-gray-600 leading-relaxed">
                 Chào mừng bạn đến với MMO Store. Bằng việc truy cập và sử dụng trang web của chúng tôi, 
@@ -65,8 +65,8 @@ export default function TermsPage() {
             {/* User Accounts */}
             <div className="border-b border-gray-200 pb-6">
               <div className="flex items-center space-x-3 mb-4">
-                <Users className="w-6 h-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-900">2. Tài khoản người dùng</h2>
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">2. Tài khoản người dùng</h2>
               </div>
               <div className="space-y-4 text-gray-600">
                 <div className="flex items-start space-x-3">
@@ -91,12 +91,12 @@ export default function TermsPage() {
             {/* Marketplace Rules */}
             <div className="border-b border-gray-200 pb-6">
               <div className="flex items-center space-x-3 mb-4">
-                <Shield className="w-6 h-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-900">3. Quy định marketplace</h2>
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">3. Quy định marketplace</h2>
               </div>
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Đối với người bán:</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Đối với người bán:</h3>
                   <ul className="space-y-2 text-gray-600 ml-4">
                     <li>• Sản phẩm phải là tài khoản game/ứng dụng hợp pháp và không vi phạm bản quyền</li>
                     <li>• Mô tả sản phẩm phải chính xác, đầy đủ và không gây hiểu lầm</li>

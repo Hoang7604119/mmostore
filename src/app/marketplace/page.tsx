@@ -356,18 +356,18 @@ export default function MarketplacePage() {
         {!selectedType ? (
           /* Type Selection */
           <div className="space-y-12">
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 lg:mb-10 space-y-4 lg:space-y-0">
               <div className="flex-1">
-                <h2 className="text-3xl font-semibold text-gray-800 mb-2 tracking-tight">
+                <h2 className="text-2xl lg:text-3xl font-semibold text-gray-800 mb-2 tracking-tight">
                   Chọn loại tài khoản
                 </h2>
-                <p className="text-base text-gray-500 font-medium">
+                <p className="text-sm lg:text-base text-gray-500 font-medium">
                   Khám phá các nền tảng phổ biến
                 </p>
               </div>
               
-              {/* Search box for product types - positioned on the right */}
-              <div className="w-72">
+              {/* Search box for product types - responsive width */}
+              <div className="w-full lg:w-72">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <input
@@ -375,13 +375,13 @@ export default function MarketplacePage() {
                     placeholder="Tìm kiếm..."
                     value={typeSearchTerm}
                     onChange={(e) => setTypeSearchTerm(e.target.value)}
-                    className="pl-10 w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 text-sm placeholder-gray-400"
+                    className="pl-10 w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 text-sm placeholder-gray-400 touch-manipulation"
                   />
                 </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
               {productTypes
                 .filter(type => 
                   type.displayName.toLowerCase().includes(typeSearchTerm.toLowerCase()) ||
@@ -484,11 +484,11 @@ export default function MarketplacePage() {
           /* Products View */
           <div className="space-y-6">
             {/* Breadcrumb and Controls */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 lg:mb-8 space-y-4 lg:space-y-0">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   onClick={() => setSelectedType(null)}
-                  className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-blue-600 hover:bg-blue-50 transition-all duration-200 shadow-sm"
+                  className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-blue-600 hover:bg-blue-50 transition-all duration-200 shadow-sm touch-manipulation w-fit"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Quay lại
@@ -502,14 +502,14 @@ export default function MarketplacePage() {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-between sm:justify-end space-x-3">
                 <div className="text-sm text-gray-600">
                   <span className="font-medium">{filteredProducts.length}</span> sản phẩm
                 </div>
                 <div className="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 p-1">
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg transition-all duration-200 ${
+                    className={`p-2 rounded-lg transition-all duration-200 touch-manipulation ${
                       viewMode === 'grid' 
                         ? 'bg-blue-500 text-white shadow-md' 
                         : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
@@ -519,7 +519,7 @@ export default function MarketplacePage() {
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-all duration-200 ${
+                    className={`p-2 rounded-lg transition-all duration-200 touch-manipulation ${
                       viewMode === 'list' 
                         ? 'bg-blue-500 text-white shadow-md' 
                         : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
@@ -532,13 +532,13 @@ export default function MarketplacePage() {
             </div>
 
             {/* Search and Filters */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 p-8">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tìm kiếm và lọc sản phẩm</h3>
-                <p className="text-sm text-gray-600">Sử dụng các bộ lọc bên dưới để tìm sản phẩm phù hợp</p>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 p-4 sm:p-6 lg:p-8">
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Tìm kiếm và lọc sản phẩm</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Sử dụng các bộ lọc bên dưới để tìm sản phẩm phù hợp</p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="relative group">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-focus-within:text-blue-500 transition-colors duration-200" />
                   <input
@@ -546,7 +546,7 @@ export default function MarketplacePage() {
                     placeholder="Tìm kiếm sản phẩm..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                    className="pl-12 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 hover:bg-white touch-manipulation"
                   />
                 </div>
                 
@@ -555,7 +555,7 @@ export default function MarketplacePage() {
                   <select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="pl-12 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 hover:bg-white appearance-none cursor-pointer"
+                    className="pl-12 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 hover:bg-white appearance-none cursor-pointer touch-manipulation"
                   >
                     <option value="all">Tất cả danh mục</option>
                     <option value="social">Social</option>
@@ -576,7 +576,7 @@ export default function MarketplacePage() {
                   placeholder="Giá tối thiểu (VNĐ)"
                   value={priceRange.min}
                   onChange={(e) => setPriceRange({...priceRange, min: e.target.value})}
-                  className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                  className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 hover:bg-white touch-manipulation"
                 />
                 
                 <input
@@ -584,7 +584,7 @@ export default function MarketplacePage() {
                   placeholder="Giá tối đa (VNĐ)"
                   value={priceRange.max}
                   onChange={(e) => setPriceRange({...priceRange, max: e.target.value})}
-                  className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                  className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 hover:bg-white touch-manipulation"
                 />
               </div>
               
@@ -769,7 +769,7 @@ export default function MarketplacePage() {
                             <div className="space-y-2">
                               <Link
                                 href={`/products/${product._id}`}
-                                className="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium flex items-center justify-center space-x-2"
+                                className="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium flex items-center justify-center space-x-2 touch-manipulation"
                               >
                                 <span>👁️ Xem chi tiết</span>
                               </Link>
@@ -780,7 +780,7 @@ export default function MarketplacePage() {
                                 <button
                                   onClick={() => handlePurchaseClick(product)}
                                   disabled={purchasing || product.totalAccountItems === 0}
-                                  className="w-full px-4 py-3 rounded-xl transition-all duration-200 font-semibold transform hover:scale-[1.02] flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50"
+                                  className="w-full px-4 py-3 rounded-xl transition-all duration-200 font-semibold transform hover:scale-[1.02] flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 touch-manipulation"
                                 >
                                   <span>
                                     {purchasing 
@@ -795,7 +795,7 @@ export default function MarketplacePage() {
                               {!user && (
                                 <Link
                                   href="/auth/login"
-                                  className="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-center font-semibold transform hover:scale-[1.02]"
+                                  className="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-center font-semibold transform hover:scale-[1.02] touch-manipulation"
                                 >
                                   🔐 Đăng nhập để mua
                                 </Link>

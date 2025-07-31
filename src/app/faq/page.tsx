@@ -217,11 +217,11 @@ export default function FAQPage() {
       )}
       <div className="flex-1">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-16">
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-8 sm:py-12 lg:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-4xl font-bold mb-4">Câu hỏi thường gặp</h1>
-              <p className="text-xl text-purple-100 max-w-2xl mx-auto">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">Câu hỏi thường gặp</h1>
+              <p className="text-base sm:text-lg lg:text-xl text-purple-100 max-w-2xl mx-auto">
                 Tìm câu trả lời cho những thắc mắc phổ biến về dịch vụ của chúng tôi.
               </p>
             </div>
@@ -229,17 +229,17 @@ export default function FAQPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
             {/* Search Bar */}
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className="relative mb-4 sm:mb-6">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="text"
                 placeholder="Tìm kiếm câu hỏi..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors touch-manipulation text-sm sm:text-base"
               />
             </div>
 
@@ -249,7 +249,7 @@ export default function FAQPage() {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors touch-manipulation ${
                     selectedCategory === category
                       ? 'bg-purple-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -274,36 +274,36 @@ export default function FAQPage() {
                 <div key={item.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                   <button
                     onClick={() => toggleExpanded(item.id)}
-                    className="w-full px-6 py-4 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-inset"
+                    className="w-full px-4 sm:px-6 py-3 sm:py-4 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-inset touch-manipulation"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="text-purple-600">
+                      <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                        <div className="text-purple-600 flex-shrink-0">
                           {item.icon}
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
                             {item.category}
                           </span>
-                          <h3 className="text-lg font-semibold text-gray-900 mt-1">
+                          <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mt-1 break-words">
                             {item.question}
                           </h3>
                         </div>
                       </div>
-                      <div className="text-gray-400">
+                      <div className="text-gray-400 flex-shrink-0 ml-2">
                         {expandedItems.includes(item.id) ? (
-                          <ChevronUp className="w-5 h-5" />
+                          <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5" />
                         ) : (
-                          <ChevronDown className="w-5 h-5" />
+                          <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
                         )}
                       </div>
                     </div>
                   </button>
                   
                   {expandedItems.includes(item.id) && (
-                    <div className="px-6 pb-4">
-                      <div className="border-t border-gray-200 pt-4">
-                        <p className="text-gray-600 leading-relaxed">
+                    <div className="px-4 sm:px-6 pb-3 sm:pb-4">
+                      <div className="border-t border-gray-200 pt-3 sm:pt-4">
+                        <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                           {item.answer}
                         </p>
                       </div>
@@ -315,22 +315,22 @@ export default function FAQPage() {
           </div>
 
           {/* Contact Support */}
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-8 mt-12 text-white text-center">
-            <MessageCircle className="w-12 h-12 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-4">Vẫn cần hỗ trợ?</h2>
-            <p className="text-purple-100 mb-6">
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 sm:p-8 mt-8 sm:mt-12 text-white text-center">
+            <MessageCircle className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4" />
+            <h2 className="text-xl sm:text-2xl font-bold mb-4">Vẫn cần hỗ trợ?</h2>
+            <p className="text-sm sm:text-base text-purple-100 mb-6">
               Nếu bạn không tìm thấy câu trả lời cho thắc mắc của mình, đội ngũ hỗ trợ của chúng tôi luôn sẵn sàng giúp đỡ.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <a
                 href="/contact"
-                className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                className="bg-white text-purple-600 px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-gray-100 transition-colors touch-manipulation"
               >
                 Liên hệ hỗ trợ
               </a>
               <a
                 href="mailto:support@mmostore.site"
-                className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors"
+                className="border-2 border-white text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-white hover:text-purple-600 transition-colors touch-manipulation"
               >
                 Gửi email
               </a>

@@ -116,43 +116,43 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {/* Store */}
-          <Link href="/marketplace" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+          <Link href="/marketplace" className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow touch-manipulation">
             <div className="flex items-center">
               <div className="bg-blue-100 p-3 rounded-full">
                 <Store className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <h3 className="font-semibold text-gray-900">Cửa Hàng</h3>
-                <p className="text-sm text-gray-600">Xem sản phẩm</p>
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Cửa Hàng</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Xem sản phẩm</p>
               </div>
             </div>
           </Link>
 
           {/* Profile */}
-          <Link href={`/dashboard/${user.role}/profile`} className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+          <Link href={`/dashboard/${user.role}/profile`} className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow touch-manipulation">
             <div className="flex items-center">
               <div className="bg-green-100 p-3 rounded-full">
                 <User className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <h3 className="font-semibold text-gray-900">Hồ Sơ</h3>
-                <p className="text-sm text-gray-600">Quản lý thông tin</p>
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Hồ Sơ</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Quản lý thông tin</p>
               </div>
             </div>
           </Link>
 
           {/* Role-specific Dashboard */}
           {user.role === 'buyer' && (
-            <Link href="/dashboard/buyer" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+            <Link href="/dashboard/buyer" className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow touch-manipulation">
               <div className="flex items-center">
                 <div className="bg-blue-100 p-3 rounded-full">
                   <Package className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="font-semibold text-gray-900">Dashboard Buyer</h3>
-                  <p className="text-sm text-gray-600">Quản lý mua sắm</p>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Dashboard Buyer</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">Quản lý mua sắm</p>
                 </div>
               </div>
             </Link>
@@ -160,14 +160,14 @@ export default function DashboardPage() {
 
           {/* Products (for sellers) */}
           {['seller', 'manager', 'admin'].includes(user.role) && (
-            <Link href="/dashboard/seller" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+            <Link href="/dashboard/seller" className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow touch-manipulation">
               <div className="flex items-center">
                 <div className="bg-green-100 p-3 rounded-full">
                   <Package className="h-6 w-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="font-semibold text-gray-900">Dashboard Seller</h3>
-                  <p className="text-sm text-gray-600">Quản lý bán hàng</p>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Dashboard Seller</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">Quản lý bán hàng</p>
                 </div>
               </div>
             </Link>
@@ -175,14 +175,14 @@ export default function DashboardPage() {
 
           {/* Admin Panel */}
           {user.role === 'admin' && (
-            <Link href="/dashboard/admin" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+            <Link href="/dashboard/admin" className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow touch-manipulation">
               <div className="flex items-center">
                 <div className="bg-red-100 p-3 rounded-full">
                   <Settings className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="font-semibold text-gray-900">Quản Trị</h3>
-                  <p className="text-sm text-gray-600">Hệ thống</p>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Quản Trị</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">Hệ thống</p>
                 </div>
               </div>
             </Link>
@@ -190,14 +190,14 @@ export default function DashboardPage() {
 
           {/* Manager Panel */}
           {['manager', 'admin'].includes(user.role) && (
-            <Link href="/dashboard/manager" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+            <Link href="/dashboard/manager" className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow touch-manipulation">
               <div className="flex items-center">
                 <div className="bg-yellow-100 p-3 rounded-full">
                   <Settings className="h-6 w-6 text-yellow-600" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="font-semibold text-gray-900">Quản Lý</h3>
-                  <p className="text-sm text-gray-600">Duyệt sản phẩm</p>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Quản Lý</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">Duyệt sản phẩm</p>
                 </div>
               </div>
             </Link>

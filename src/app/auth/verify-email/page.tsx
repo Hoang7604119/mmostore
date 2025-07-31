@@ -72,28 +72,28 @@ export default function VerifyEmailPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-md mx-auto px-4 py-4">
+        <div className="max-w-md mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <Link href="/auth/register" className="flex items-center text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Quay lại
+            <Link href="/auth/register" className="flex items-center text-gray-600 hover:text-gray-900 touch-manipulation">
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <span className="text-sm sm:text-base">Quay lại</span>
             </Link>
-            <Link href="/" className="flex items-center text-gray-600 hover:text-gray-900">
-              <Home className="w-5 h-5" />
+            <Link href="/" className="flex items-center text-gray-600 hover:text-gray-900 touch-manipulation">
+              <Home className="w-4 h-4 sm:w-5 sm:h-5" />
             </Link>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex items-center justify-center px-4 py-12">
+      <div className="flex items-center justify-center px-4 py-8 sm:py-12">
         <div className="max-w-md w-full">
-          <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="bg-white rounded-lg shadow-md p-6 sm:p-8">
             {/* Logo */}
-            <div className="text-center mb-8">
-              <Link href="/" className="inline-block">
-                <h1 className="text-3xl font-bold text-blue-600">MMO Store</h1>
-                <p className="text-sm text-gray-600 mt-1">Nền tảng mua bán tài khoản game</p>
+            <div className="text-center mb-6 sm:mb-8">
+              <Link href="/" className="inline-block touch-manipulation">
+                <h1 className="text-2xl sm:text-3xl font-bold text-blue-600">MMO Store</h1>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Nền tảng mua bán tài khoản game</p>
               </Link>
             </div>
 
@@ -107,14 +107,14 @@ export default function VerifyEmailPage() {
             />
 
             {/* Help Section */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
               <div className="text-center space-y-2">
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Cần thay đổi email?
                 </p>
                 <Link 
                   href="/auth/register" 
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium touch-manipulation"
                 >
                   Quay lại trang đăng ký
                 </Link>
@@ -123,10 +123,10 @@ export default function VerifyEmailPage() {
           </div>
 
           {/* Footer */}
-          <div className="text-center mt-8">
-            <p className="text-sm text-gray-600">
+          <div className="text-center mt-6 sm:mt-8">
+            <p className="text-xs sm:text-sm text-gray-600">
               Đã có tài khoản?{' '}
-              <Link href="/auth/login" className="text-blue-600 hover:text-blue-800 font-medium">
+              <Link href="/auth/login" className="text-blue-600 hover:text-blue-800 font-medium touch-manipulation">
                 Đăng nhập ngay
               </Link>
             </p>

@@ -205,45 +205,45 @@ export default function SellerProductsPage() {
         </div>
 
         {/* Page Header */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
             <div className="flex items-center">
-              <Package className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-3" />
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Sản Phẩm Của Tôi
               </h1>
             </div>
             <Link
               href="/dashboard/seller/products/create"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center touch-manipulation w-full sm:w-auto justify-center"
             >
               <Plus className="h-5 w-5 mr-2" />
               Tạo sản phẩm mới
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{products.length}</div>
-              <div className="text-sm text-gray-600">Tổng sản phẩm</div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+            <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+              <div className="text-lg sm:text-2xl font-bold text-blue-600">{products.length}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Tổng sản phẩm</div>
             </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">
+            <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg">
+              <div className="text-lg sm:text-2xl font-bold text-yellow-600">
                 {products.filter(p => p.status === 'pending').length}
               </div>
-              <div className="text-sm text-gray-600">Chờ duyệt</div>
+              <div className="text-xs sm:text-sm text-gray-600">Chờ duyệt</div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">
+            <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
+              <div className="text-lg sm:text-2xl font-bold text-green-600">
                 {products.filter(p => p.status === 'approved').length}
               </div>
-              <div className="text-sm text-gray-600">Đã duyệt</div>
+              <div className="text-xs sm:text-sm text-gray-600">Đã duyệt</div>
             </div>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">
+            <div className="bg-red-50 p-3 sm:p-4 rounded-lg">
+              <div className="text-lg sm:text-2xl font-bold text-red-600">
                 {products.filter(p => p.status === 'rejected').length}
               </div>
-              <div className="text-sm text-gray-600">Từ chối</div>
+              <div className="text-xs sm:text-sm text-gray-600">Từ chối</div>
             </div>
           </div>
           
@@ -256,7 +256,7 @@ export default function SellerProductsPage() {
                 placeholder="Tìm kiếm sản phẩm..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent touch-manipulation"
               />
             </div>
             <div className="relative">
@@ -264,7 +264,7 @@ export default function SellerProductsPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white touch-manipulation w-full sm:w-auto"
               >
                 <option value="all">Tất cả trạng thái</option>
                 <option value="pending">Chờ duyệt</option>
@@ -277,10 +277,10 @@ export default function SellerProductsPage() {
         </div>
 
         {/* Products Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredProducts.map((product) => (
             <div key={product._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                     {product.title}
@@ -325,19 +325,19 @@ export default function SellerProductsPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
                   <button 
                     onClick={() => setSelectedProduct(product)}
-                    className="flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                    className="flex items-center justify-center text-blue-600 hover:text-blue-800 text-sm touch-manipulation py-2 sm:py-0"
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     Xem chi tiết
                   </button>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 justify-center sm:justify-end">
                     {product.status !== 'approved' && (
                       <button
-                        className="text-gray-600 hover:text-gray-800 p-1"
+                        className="text-gray-600 hover:text-gray-800 p-2 touch-manipulation"
                         title="Chỉnh sửa"
                       >
                         <Edit className="h-4 w-4" />
@@ -345,7 +345,7 @@ export default function SellerProductsPage() {
                     )}
                     <button
                       onClick={() => handleDeleteProduct(product._id)}
-                      className="text-red-600 hover:text-red-800 p-1"
+                      className="text-red-600 hover:text-red-800 p-2 touch-manipulation"
                       title="Xóa"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -358,12 +358,12 @@ export default function SellerProductsPage() {
         </div>
         
         {filteredProducts.length === 0 && (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
+          <div className="bg-white rounded-lg shadow p-6 sm:p-8 text-center">
             <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 mb-4">Chưa có sản phẩm nào</p>
             <Link
               href="/dashboard/seller/products/create"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center mx-auto"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto touch-manipulation w-full sm:w-auto"
             >
               <Plus className="h-5 w-5 mr-2" />
               Tạo sản phẩm đầu tiên

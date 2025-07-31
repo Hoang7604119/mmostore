@@ -34,11 +34,11 @@ export default function PrivacyPage() {
       )}
       <div className="flex-1">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white py-16">
+        <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white py-12 sm:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-4xl font-bold mb-4">Chính sách bảo mật</h1>
-              <p className="text-xl text-green-100 max-w-2xl mx-auto">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-4">Chính sách bảo mật</h1>
+              <p className="text-lg sm:text-xl text-green-100 max-w-2xl mx-auto">
                 Chúng tôi cam kết bảo vệ quyền riêng tư và thông tin cá nhân của bạn một cách tốt nhất.
               </p>
             </div>
@@ -46,14 +46,14 @@ export default function PrivacyPage() {
         </div>
 
         {/* Privacy Content */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="bg-white rounded-lg shadow-lg p-8 space-y-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 space-y-6 sm:space-y-8">
             
             {/* Introduction */}
             <div className="border-b border-gray-200 pb-6">
               <div className="flex items-center space-x-3 mb-4">
-                <Shield className="w-6 h-6 text-green-600" />
-                <h2 className="text-2xl font-bold text-gray-900">1. Cam kết bảo mật</h2>
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">1. Cam kết bảo mật</h2>
               </div>
               <p className="text-gray-600 leading-relaxed">
                 MMO Store cam kết bảo vệ thông tin cá nhân của người dùng. Chính sách này mô tả cách chúng tôi 
@@ -65,12 +65,12 @@ export default function PrivacyPage() {
             {/* Information Collection */}
             <div className="border-b border-gray-200 pb-6">
               <div className="flex items-center space-x-3 mb-4">
-                <Database className="w-6 h-6 text-green-600" />
-                <h2 className="text-2xl font-bold text-gray-900">2. Thông tin chúng tôi thu thập</h2>
+                <Database className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">2. Thông tin chúng tôi thu thập</h2>
               </div>
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Thông tin cá nhân:</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Thông tin cá nhân:</h3>
                   <ul className="space-y-2 text-gray-600 ml-4">
                     <li>• Họ tên, email, số điện thoại</li>
                     <li>• Thông tin thanh toán (được mã hóa và xử lý qua PayOS)</li>
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Thông tin tự động:</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Thông tin tự động:</h3>
                   <ul className="space-y-2 text-gray-600 ml-4">
                     <li>• Cookies và dữ liệu phiên làm việc</li>
                     <li>• Thông tin trình duyệt và hệ điều hành</li>
@@ -93,8 +93,8 @@ export default function PrivacyPage() {
             {/* Information Usage */}
             <div className="border-b border-gray-200 pb-6">
               <div className="flex items-center space-x-3 mb-4">
-                <Eye className="w-6 h-6 text-green-600" />
-                <h2 className="text-2xl font-bold text-gray-900">3. Cách chúng tôi sử dụng thông tin</h2>
+                <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">3. Cách chúng tôi sử dụng thông tin</h2>
               </div>
               <div className="space-y-4 text-gray-600">
                 <div className="bg-green-50 p-4 rounded-lg">
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
               </div>
               <div className="space-y-4 text-gray-600">
                 <p>Chúng tôi áp dụng nhiều lớp bảo mật để bảo vệ thông tin của bạn:</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-800 mb-2">Bảo mật kỹ thuật:</h4>
                     <ul className="space-y-1 text-blue-700 text-sm">

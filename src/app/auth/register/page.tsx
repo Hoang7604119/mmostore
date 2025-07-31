@@ -173,34 +173,39 @@ export default function RegisterPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center group transition-all duration-300 hover:scale-105">
+              <Link href="/" className="flex items-center group transition-all duration-300 hover:scale-105 touch-manipulation">
                 <div className="relative">
-                  <ShoppingCart className="h-8 w-8 text-blue-600 group-hover:text-blue-700 transition-all duration-300" />
+                  <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 group-hover:text-blue-700 transition-all duration-300" />
                   <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
-                <span className="ml-3 text-xl font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-indigo-600 transition-all duration-300">MMO Store</span>
+                <span className="ml-2 sm:ml-3 text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-indigo-600 transition-all duration-300">
+                  <span className="hidden sm:inline">MMO Store</span>
+                  <span className="sm:hidden">MMO</span>
+                </span>
               </Link>
             </div>
-            <div className="flex items-center space-x-3">
-              <Link href="/marketplace" className="px-4 py-2 text-gray-700 hover:text-gray-900 text-sm font-semibold rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 border border-transparent hover:border-blue-100/50 hover:shadow-sm">
-                🛒 Marketplace
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <Link href="/marketplace" className="px-2 sm:px-4 py-2 text-gray-700 hover:text-gray-900 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 border border-transparent hover:border-blue-100/50 hover:shadow-sm touch-manipulation">
+                <span className="hidden sm:inline">🛒 Marketplace</span>
+                <span className="sm:hidden">🛒</span>
               </Link>
-              <Link href="/auth/login" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 border border-blue-500/20">
-                🔑 Đăng nhập
+              <Link href="/auth/login" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 border border-blue-500/20 touch-manipulation">
+                <span className="hidden sm:inline">🔑 Đăng nhập</span>
+                <span className="sm:hidden">🔑</span>
               </Link>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
+      <div className="flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-6 sm:space-y-8">
           {/* Form Header */}
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900">Đăng ký</h2>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Đăng ký</h2>
             <p className="mt-2 text-sm text-gray-600">
               Đã có tài khoản?{' '}
-              <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500 touch-manipulation">
                 Đăng nhập ngay
               </Link>
             </p>
@@ -223,7 +228,7 @@ export default function RegisterPage() {
                       required
                       value={formData.username}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm touch-manipulation"
                       placeholder="Nhập tên đăng nhập"
                     />
                   </div>
@@ -239,7 +244,7 @@ export default function RegisterPage() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm touch-manipulation"
                       placeholder="Nhập địa chỉ email"
                     />
                   </div>
@@ -256,12 +261,12 @@ export default function RegisterPage() {
                         required
                         value={formData.password}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10"
+                        className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10 text-sm touch-manipulation"
                         placeholder="Nhập mật khẩu (ít nhất 12 ký tự)"
                       />
                       <button
                         type="button"
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center touch-manipulation"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
@@ -292,12 +297,12 @@ export default function RegisterPage() {
                         required
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10"
+                        className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10 text-sm touch-manipulation"
                         placeholder="Nhập lại mật khẩu"
                       />
                       <button
                         type="button"
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center touch-manipulation"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
                         {showConfirmPassword ? (
@@ -325,7 +330,7 @@ export default function RegisterPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center py-2.5 sm:py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                 >
                   {loading ? (
                     <>
@@ -344,7 +349,7 @@ export default function RegisterPage() {
 
           {/* Back to home */}
           <div className="text-center">
-            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
+            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900 touch-manipulation">
               ← Quay về trang chủ
             </Link>
           </div>

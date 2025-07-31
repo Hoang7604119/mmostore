@@ -117,11 +117,11 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200/50 z-50 max-h-96 overflow-hidden">
+        <div className="fixed top-16 right-2 sm:absolute sm:top-auto sm:right-0 sm:mt-2 w-72 sm:w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200/50 z-[80] max-h-[calc(100vh-5rem)] sm:max-h-96 overflow-hidden">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Tin nhắn</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Tin nhắn</h3>
               <div className="flex items-center space-x-2">
                 {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
                 <Link
@@ -147,7 +147,7 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
           </div>
 
           {/* Conversations List */}
-          <div className="max-h-64 overflow-y-auto">
+          <div className="max-h-48 sm:max-h-64 overflow-y-auto">
             {loading ? (
               <div className="px-4 py-8 text-center text-gray-500">
                 <LoadingSpinner size="xs" fullScreen={false} />
@@ -164,7 +164,7 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
                 <Link
                   key={conversation.conversationId}
                   href={`/dashboard/messages`}
-                  className={`block px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                  className={`block px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                     conversation.unreadCount > 0 ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                   }`}
                   onClick={() => handleConversationClick(conversation.conversationId)}
@@ -212,10 +212,10 @@ const MessageIcon: React.FC<MessageIconProps> = ({ userId, className = '' }) => 
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-gray-200 bg-gray-50">
             <Link
               href="/dashboard/messages/new"
-              className="flex items-center justify-center space-x-2 w-full text-sm text-blue-600 hover:text-blue-800 font-medium py-2 px-3 rounded-lg hover:bg-blue-50 transition-colors"
+              className="flex items-center justify-center space-x-2 w-full text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium py-2 px-3 rounded-lg hover:bg-blue-50 transition-colors touch-manipulation"
               onClick={() => setIsOpen(false)}
             >
               <Send className="w-4 h-4" />

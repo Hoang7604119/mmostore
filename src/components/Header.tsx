@@ -212,22 +212,23 @@ export default function Header({ user, onLogout }: HeaderProps) {
 
   return (
     <header className="bg-gradient-to-r from-white via-blue-50/30 to-white backdrop-blur-xl shadow-xl border-b border-blue-100/50 sticky top-0 z-50">
-      <div className="w-full px-6">
+      <div className="w-full px-4 sm:px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center group hover:scale-105 transition-all duration-300">
               <div className="relative">
-                <ShoppingCart className="h-8 w-8 text-blue-600 group-hover:text-blue-700 transition-colors duration-300" />
+                <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 group-hover:text-blue-700 transition-colors duration-300" />
                 <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-lg group-hover:bg-blue-500/30 transition-all duration-300"></div>
               </div>
-              <span className="ml-3 text-xl font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-indigo-700 transition-all duration-300">{CONTACT_INFO.COMPANY_NAME}</span>
+              <span className="ml-2 sm:ml-3 text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-indigo-700 transition-all duration-300 hidden xs:block">{CONTACT_INFO.COMPANY_NAME}</span>
+              <span className="ml-2 text-sm font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-indigo-700 transition-all duration-300 xs:hidden">MMO</span>
             </Link>
           </div>
 
           {/* User Info & Navigation Menu */}
-          <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="hidden lg:flex items-center space-x-3">
               <span className="text-sm font-medium bg-gradient-to-r from-gray-700 to-gray-600 bg-clip-text text-transparent">Xin chào, {user?.username || 'Guest'}</span>
               <span className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm border backdrop-blur-sm ${getRoleColor(user?.role || 'buyer')}`}>
                     {getRoleDisplayName(user?.role || 'buyer')}
@@ -235,7 +236,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             </div>
             
             {/* Message and Notification Icons */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <MessageIcon userId={user?._id || ''} />
               <NotificationIcon userId={user?._id || ''} />
             </div>
@@ -244,36 +245,53 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-white to-blue-50/50 text-gray-700 hover:text-gray-900 hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 shadow-sm border border-gray-200/50 backdrop-blur-sm hover:shadow-md hover:scale-105"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-white to-blue-50/50 text-gray-700 hover:text-gray-900 hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 shadow-sm border border-gray-200/50 backdrop-blur-sm hover:shadow-md hover:scale-105 touch-manipulation"
                 title="Menu điều hướng"
               >
                 {isDropdownOpen ? (
-                  <X className="h-5 w-5 transition-transform duration-300 rotate-90" />
+                  <X className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300 rotate-90" />
                 ) : (
-                  <Menu className="h-5 w-5 transition-transform duration-300" />
+                  <Menu className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300" />
                 )}
-                <span className="text-sm font-semibold">Menu</span>
+                <span className="text-xs sm:text-sm font-semibold hidden xs:block">Menu</span>
               </button>
 
               {/* Dropdown Menu - Modern & Clean */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-gradient-to-br from-white via-blue-50/30 to-white backdrop-blur-2xl rounded-3xl shadow-2xl border border-blue-100/50 py-4 z-50 animate-in slide-in-from-top-2 duration-300">
+                <div className="absolute right-0 mt-3 w-72 sm:w-80 bg-gradient-to-br from-white via-blue-50/30 to-white backdrop-blur-2xl rounded-3xl shadow-2xl border border-blue-100/50 py-4 z-[70] animate-in slide-in-from-top-2 duration-300 max-h-[85vh] overflow-y-auto">
+                  {/* Mobile User Info - Only visible on mobile */}
+                  <div className="sm:hidden px-4 py-3 border-b border-gradient-to-r from-transparent via-blue-100/50 to-transparent">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${getRoleColor(user?.role || 'buyer').replace('bg-', 'bg-')}`}>
+                        {user?.username?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">{user?.username || 'Guest'}</div>
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold shadow-sm border backdrop-blur-sm ${getRoleColor(user?.role || 'buyer')}`}>
+                          {getRoleDisplayName(user?.role || 'buyer')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+
+
                   {/* Credit Display */}
-                  <div className="px-6 py-5 border-b border-gradient-to-r from-transparent via-blue-100/50 to-transparent">
+                  <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gradient-to-r from-transparent via-blue-100/50 to-transparent">
                     <Link href="/dashboard/credit" className="block">
-                      <div className="bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-50 px-5 py-4 rounded-2xl border border-emerald-200/50 hover:from-emerald-100 hover:via-green-100/50 hover:to-emerald-100 transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-lg">
+                      <div className="bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-50 px-4 sm:px-5 py-3 sm:py-4 rounded-2xl border border-emerald-200/50 hover:from-emerald-100 hover:via-green-100/50 hover:to-emerald-100 transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-lg touch-manipulation">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
                             <div className="relative">
-                              <div className="w-4 h-4 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full animate-pulse shadow-md"></div>
+                              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full animate-pulse shadow-md"></div>
                               <div className="absolute inset-0 bg-emerald-400/30 rounded-full blur-sm animate-pulse"></div>
                             </div>
-                            <span className="text-emerald-800 font-bold text-base bg-gradient-to-r from-emerald-800 to-green-700 bg-clip-text text-transparent">
+                            <span className="text-emerald-800 font-bold text-sm sm:text-base bg-gradient-to-r from-emerald-800 to-green-700 bg-clip-text text-transparent">
                               {(user.credit || 0).toLocaleString('vi-VN')} Credit
                             </span>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1">
-                            <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </div>
@@ -293,7 +311,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                         <Link
                           key={item.href}
                           href={item.href}
-                          className={`flex items-center space-x-4 px-5 py-3.5 text-sm rounded-2xl transition-all duration-300 group border border-transparent hover:shadow-sm ${
+                          className={`flex items-center space-x-3 sm:space-x-4 px-4 sm:px-5 py-3 sm:py-3.5 text-sm rounded-2xl transition-all duration-300 group border border-transparent hover:shadow-sm touch-manipulation ${
                             isActive
                               ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 shadow-sm border-blue-200/50'
                               : 'text-gray-700 hover:text-gray-900 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 hover:border-blue-100/50'
@@ -324,7 +342,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                   <div className="px-4 pt-3 border-t border-gradient-to-r from-transparent via-red-100/30 to-transparent">
                     <button
                       onClick={onLogout}
-                      className="flex items-center space-x-4 w-full px-5 py-3.5 text-red-600 hover:text-red-700 hover:bg-gradient-to-r hover:from-red-50/50 hover:to-pink-50/50 rounded-2xl transition-all duration-300 group border border-transparent hover:border-red-100/50 hover:shadow-sm"
+                      className="flex items-center space-x-3 sm:space-x-4 w-full px-4 sm:px-5 py-3 sm:py-3.5 text-red-600 hover:text-red-700 hover:bg-gradient-to-r hover:from-red-50/50 hover:to-pink-50/50 rounded-2xl transition-all duration-300 group border border-transparent hover:border-red-100/50 hover:shadow-sm touch-manipulation"
                     >
                       <div className="relative">
                         <LogOut className="h-5 w-5 group-hover:scale-110 transition-all duration-300 group-hover:text-red-600" />
