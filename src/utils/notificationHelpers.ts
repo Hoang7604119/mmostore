@@ -1,17 +1,43 @@
 import { sendNotification, sendBulkNotification, createNotificationData, NotificationTemplates } from '@/lib/notifications'
+import User from '@/models/User'
+
+// Helper function to get appropriate dashboard URL based on user's current role
+const getDashboardUrl = async (userId: string, defaultPath: string = '') => {
+  try {
+    const user = await User.findById(userId)
+    if (!user) return defaultPath
+    
+    const role = user.role
+    switch (role) {
+      case 'admin':
+        return `/dashboard/admin${defaultPath}`
+      case 'manager':
+        return `/dashboard/manager${defaultPath}`
+      case 'seller':
+        return `/dashboard/seller${defaultPath}`
+      case 'buyer':
+      default:
+        return `/dashboard/buyer${defaultPath}`
+    }
+  } catch (error) {
+    console.error('Error getting user role for dashboard URL:', error)
+    return defaultPath
+  }
+}
 
 // Helper functions for common notification scenarios
 
 // Product-related notifications
 export const notifyProductApproved = async (userId: string, productName: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(userId, '/products')
     await sendNotification(
       'PRODUCT_APPROVED',
       userId,
       {
         productName
       },
-      `/dashboard/seller/products`
+      dashboardUrl
     )
   } catch (error) {
     console.error('Error sending product approved notification:', error)
@@ -20,6 +46,7 @@ export const notifyProductApproved = async (userId: string, productName: string)
 
 export const notifyProductRejected = async (userId: string, productName: string, reason: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(userId, '/products')
     await sendNotification(
       'PRODUCT_REJECTED',
       userId,
@@ -27,7 +54,7 @@ export const notifyProductRejected = async (userId: string, productName: string,
         productName,
         reason
       },
-      `/dashboard/seller/products`
+      dashboardUrl
     )
   } catch (error) {
     console.error('Error sending product rejected notification:', error)
@@ -37,6 +64,7 @@ export const notifyProductRejected = async (userId: string, productName: string,
 
 
 export const notifyLowStock = async (userId: string, productName: string, currentStock: number, productId: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/products')
   const result = await sendNotification(
     'PRODUCT_OUT_OF_STOCK',
     userId,
@@ -45,7 +73,7 @@ export const notifyLowStock = async (userId: string, productName: string, curren
       currentStock: currentStock.toString(),
       alertDate: new Date().toLocaleDateString('vi-VN')
     },
-    `/dashboard/seller/products/${productId}`
+    dashboardUrl
   )
   
   return result
@@ -53,6 +81,7 @@ export const notifyLowStock = async (userId: string, productName: string, curren
 
 // Order-related notifications
 export const notifyOrderPlaced = async (userId: string, orderId: string, totalAmount: number, itemCount: number) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/orders')
   const result = await sendNotification(
     'ORDER_RECEIVED',
     userId,
@@ -62,7 +91,7 @@ export const notifyOrderPlaced = async (userId: string, orderId: string, totalAm
       itemCount: itemCount.toString(),
       orderDate: new Date().toLocaleDateString('vi-VN')
     },
-    `/dashboard/buyer/orders/${orderId}`
+    dashboardUrl
   )
   
   
@@ -71,6 +100,7 @@ export const notifyOrderPlaced = async (userId: string, orderId: string, totalAm
 
 export const notifyOrderStatusUpdate = async (userId: string, orderId: string, status: string, estimatedDelivery?: string) => {
   const templateKey = status === 'completed' ? 'ORDER_COMPLETED' : 'ORDER_RECEIVED'
+  const dashboardUrl = await getDashboardUrl(userId, '/orders')
   return await sendNotification(
     templateKey,
     userId,
@@ -80,11 +110,12 @@ export const notifyOrderStatusUpdate = async (userId: string, orderId: string, s
       updateDate: new Date().toLocaleDateString('vi-VN'),
       ...(estimatedDelivery && { estimatedDelivery })
     },
-    `/dashboard/buyer/orders/${orderId}`
+    dashboardUrl
   )
 }
 
 export const notifyOrderDelivered = async (userId: string, orderId: string, deliveryDate: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/orders')
   return await sendNotification(
     'ORDER_COMPLETED',
     userId,
@@ -93,12 +124,13 @@ export const notifyOrderDelivered = async (userId: string, orderId: string, deli
       deliveryDate,
       completionDate: new Date().toLocaleDateString('vi-VN')
     },
-    `/dashboard/buyer/orders/${orderId}`
+    dashboardUrl
   )
 }
 
 // Account-related notifications
 export const notifyAccountUpgrade = async (userId: string, newRole: string, upgradeDate: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/profile')
   return await sendNotification(
     'ACCOUNT_APPROVED',
     userId,
@@ -107,11 +139,12 @@ export const notifyAccountUpgrade = async (userId: string, newRole: string, upgr
       upgradeDate,
       effectiveDate: new Date().toLocaleDateString('vi-VN')
     },
-    '/dashboard/profile'
+    dashboardUrl
   )
 }
 
 export const notifyPasswordChanged = async (userId: string, changeDate: string, ipAddress: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/security')
   return await sendNotification(
     'ACCOUNT_APPROVED',
     userId,
@@ -121,12 +154,13 @@ export const notifyPasswordChanged = async (userId: string, changeDate: string, 
       ipAddress,
       securityDate: new Date().toLocaleDateString('vi-VN')
     },
-    '/dashboard/security'
+    dashboardUrl
   )
 }
 
 // Payment-related notifications
 export const notifyPaymentReceived = async (userId: string, amount: number, method: string, transactionId: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/credit')
   return await sendNotification(
     'PAYMENT_RECEIVED',
     userId,
@@ -136,11 +170,12 @@ export const notifyPaymentReceived = async (userId: string, amount: number, meth
       transactionId,
       paymentDate: new Date().toLocaleDateString('vi-VN')
     },
-    '/dashboard/credit'
+    dashboardUrl
   )
 }
 
 export const notifyPaymentFailed = async (userId: string, amount: number, reason: string, orderId?: string) => {
+  const actionUrl = orderId ? await getDashboardUrl(userId, '/orders') : await getDashboardUrl(userId, '/credit')
   return await sendNotification(
     'PAYMENT_RECEIVED',
     userId,
@@ -150,7 +185,7 @@ export const notifyPaymentFailed = async (userId: string, amount: number, reason
       failureDate: new Date().toLocaleDateString('vi-VN'),
       ...(orderId && { orderId })
     },
-    orderId ? `/dashboard/buyer/orders/${orderId}` : '/dashboard/credit'
+    actionUrl
   )
 }
 
@@ -194,7 +229,7 @@ export const notifyPromotion = async (userIds: string[], title: string, descript
       ...(promoCode && { promoCode }),
       promotionDate: new Date().toLocaleDateString('vi-VN')
     },
-    '/dashboard/buyer/marketplace'
+    '/marketplace'
   )
 }
 
@@ -206,6 +241,7 @@ export const notifyNewMessage = async (receiverId: string, senderName: string, m
       ? messageContent.substring(0, 50) + '...'
       : messageContent
 
+    const dashboardUrl = await getDashboardUrl(receiverId, '/messages')
     await sendNotification(
       'NEW_MESSAGE',
       receiverId,
@@ -213,7 +249,7 @@ export const notifyNewMessage = async (receiverId: string, senderName: string, m
         senderName,
         messageContent: truncatedContent
       },
-      `/dashboard/messages`
+      dashboardUrl
     )
   } catch (error) {
     console.error('Error sending new message notification:', error)
@@ -228,12 +264,13 @@ export const markMessageNotificationsAsRead = async (userId: string, conversatio
     
     await connectDB()
     
-    // Mark all message notifications as read since they all redirect to /dashboard/messages
+    const dashboardUrl = await getDashboardUrl(userId, '/messages')
+    // Mark all message notifications as read since they all redirect to dashboard messages
     const result = await Notification.updateMany(
       {
         userId,
         category: 'system',
-        actionUrl: `/dashboard/messages`,
+        actionUrl: dashboardUrl,
         isRead: false
       },
       {
@@ -249,6 +286,7 @@ export const markMessageNotificationsAsRead = async (userId: string, conversatio
 
 // Review and rating notifications
 export const notifyNewReview = async (userId: string, productName: string, rating: number, reviewerName: string, productId: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/products')
   const notificationData = {
     title: 'Đánh giá mới cho sản phẩm',
     message: `${reviewerName} đã đánh giá ${rating} sao cho sản phẩm "${productName}". Hãy xem và phản hồi!`,
@@ -260,7 +298,7 @@ export const notifyNewReview = async (userId: string, productName: string, ratin
       reviewerName,
       reviewDate: new Date().toLocaleDateString('vi-VN')
     },
-    actionUrl: `/dashboard/seller/products/${productId}/reviews`,
+    actionUrl: dashboardUrl,
     actionText: 'Xem đánh giá'
   }
   
@@ -274,7 +312,7 @@ export const notifyNewReview = async (userId: string, productName: string, ratin
       reviewerName,
       reviewDate: new Date().toLocaleDateString('vi-VN')
     },
-    `/dashboard/seller/products/${productId}/reviews`
+    dashboardUrl
   )
 }
 
@@ -294,7 +332,7 @@ export const notifyWishlistItemOnSale = async (userId: string, productName: stri
       discount: discount.toString(),
       saleDate: new Date().toLocaleDateString('vi-VN')
     },
-    actionUrl: `/dashboard/buyer/marketplace/product/${productId}`,
+    actionUrl: `/products/${productId}`,
     actionText: 'Mua ngay'
   }
   
@@ -309,12 +347,13 @@ export const notifyWishlistItemOnSale = async (userId: string, productName: stri
       discount: discount.toString(),
       saleDate: new Date().toLocaleDateString('vi-VN')
     },
-    `/dashboard/buyer/marketplace/product/${productId}`
+    `/products/${productId}`
   )
 }
 
 // Credit/wallet notifications
 export const notifyCreditAdded = async (userId: string, amount: number, method: string, newBalance: number) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/credit')
   const notificationData = {
     title: 'Nạp tiền thành công',
     message: `Bạn đã nạp thành công ${amount.toLocaleString('vi-VN')} VNĐ vào tài khoản. Số dư hiện tại: ${newBalance.toLocaleString('vi-VN')} VNĐ.`,
@@ -326,7 +365,7 @@ export const notifyCreditAdded = async (userId: string, amount: number, method: 
       newBalance: newBalance.toLocaleString('vi-VN'),
       transactionDate: new Date().toLocaleDateString('vi-VN')
     },
-    actionUrl: '/dashboard/credit',
+    actionUrl: dashboardUrl,
     actionText: 'Xem lịch sử'
   }
   
@@ -339,11 +378,12 @@ export const notifyCreditAdded = async (userId: string, amount: number, method: 
       newBalance: newBalance.toLocaleString('vi-VN'),
       transactionDate: new Date().toLocaleDateString('vi-VN')
     },
-    '/dashboard/credit'
+    dashboardUrl
   )
 }
 
 export const notifyCreditWithdrawn = async (userId: string, amount: number, method: string, newBalance: number) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/credit')
   const notificationData = {
     title: 'Rút tiền thành công',
     message: `Bạn đã rút thành công ${amount.toLocaleString('vi-VN')} VNĐ từ tài khoản. Số dư hiện tại: ${newBalance.toLocaleString('vi-VN')} VNĐ.`,
@@ -355,7 +395,7 @@ export const notifyCreditWithdrawn = async (userId: string, amount: number, meth
       newBalance: newBalance.toLocaleString('vi-VN'),
       transactionDate: new Date().toLocaleDateString('vi-VN')
     },
-    actionUrl: '/dashboard/credit',
+    actionUrl: dashboardUrl,
     actionText: 'Xem lịch sử'
   }
   
@@ -368,12 +408,13 @@ export const notifyCreditWithdrawn = async (userId: string, amount: number, meth
       newBalance: newBalance.toLocaleString('vi-VN'),
       transactionDate: new Date().toLocaleDateString('vi-VN')
     },
-    '/dashboard/credit'
+    dashboardUrl
   )
 }
 
 // Additional helper functions for integrated notifications
 export const notifyProductCreated = async (userId: string, productName: string, status: string, productId: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/products')
   const result = await sendNotification(
     'PRODUCT_APPROVED',
     userId,
@@ -382,13 +423,14 @@ export const notifyProductCreated = async (userId: string, productName: string, 
       status,
       createdDate: new Date().toLocaleDateString('vi-VN')
     },
-    `/dashboard/seller/products/${productId}`
+    dashboardUrl
   )
   
   return result
 }
 
 export const notifyOrderCreated = async (userId: string, productName: string, quantity: number, totalAmount: number, productId: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/orders')
   const result = await sendNotification(
     'ORDER_RECEIVED',
     userId,
@@ -400,13 +442,14 @@ export const notifyOrderCreated = async (userId: string, productName: string, qu
       totalAmount: totalAmount.toLocaleString('vi-VN'),
       orderDate: new Date().toLocaleDateString('vi-VN')
     },
-    `/dashboard/buyer/orders`
+    dashboardUrl
   )
   
   return result
 }
 
 export const notifyProductSold = async (userId: string, productName: string, quantity: number, totalAmount: number, buyerName: string, productId: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/orders')
   const result = await sendNotification(
     'ORDER_RECEIVED',
     userId,
@@ -419,13 +462,14 @@ export const notifyProductSold = async (userId: string, productName: string, qua
       buyerName,
       saleDate: new Date().toLocaleDateString('vi-VN')
     },
-    `/dashboard/seller/products/${productId}`
+    dashboardUrl
   )
   
   return result
 }
 
 export const notifyCreditUpdated = async (userId: string, action: 'added' | 'subtracted', amount: number, newBalance: number, reason: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/credit')
   const result = await sendNotification(
     action === 'added' ? 'CREDIT_DEPOSITED' : 'CREDIT_WITHDRAWN',
     userId,
@@ -436,7 +480,7 @@ export const notifyCreditUpdated = async (userId: string, action: 'added' | 'sub
       reason,
       updateDate: new Date().toLocaleDateString('vi-VN')
     },
-    '/dashboard/credit'
+    dashboardUrl
   )
   
   return result
@@ -444,6 +488,7 @@ export const notifyCreditUpdated = async (userId: string, action: 'added' | 'sub
 
 export const notifyRoleChanged = async (userId: string, oldRole: string, newRole: string, changedBy: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(userId, '/profile')
     await sendNotification(
       'ROLE_CHANGED',
       userId,
@@ -453,7 +498,7 @@ export const notifyRoleChanged = async (userId: string, oldRole: string, newRole
         changedBy,
         changeDate: new Date().toLocaleDateString('vi-VN')
       },
-      '/dashboard/profile'
+      dashboardUrl
     )
   } catch (error) {
     console.error('Error sending role changed notification:', error)
@@ -462,6 +507,7 @@ export const notifyRoleChanged = async (userId: string, oldRole: string, newRole
 
 export const notifyAccountStatusChanged = async (userId: string, status: 'activated' | 'deactivated', changedBy: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(userId, '/profile')
     await sendNotification(
       status === 'activated' ? 'ACCOUNT_APPROVED' : 'ACCOUNT_SUSPENDED',
       userId,
@@ -470,7 +516,7 @@ export const notifyAccountStatusChanged = async (userId: string, status: 'activa
         changedBy,
         changeDate: new Date().toLocaleDateString('vi-VN')
       },
-      '/dashboard/profile'
+      dashboardUrl
     )
   } catch (error) {
     console.error('Error sending account status changed notification:', error)
@@ -478,6 +524,7 @@ export const notifyAccountStatusChanged = async (userId: string, status: 'activa
 }
 
 export const notifySellerRequestSubmitted = async (userId: string, username: string) => {
+  const dashboardUrl = await getDashboardUrl(userId, '/profile')
   return await sendNotification(
     'SELLER_REQUEST_SUBMITTED',
     userId,
@@ -485,7 +532,7 @@ export const notifySellerRequestSubmitted = async (userId: string, username: str
       username,
       requestDate: new Date().toLocaleDateString('vi-VN')
     },
-    '/dashboard/profile'
+    dashboardUrl
   )
 }
 
@@ -503,6 +550,7 @@ export const notifyAdminsNewSellerRequest = async (username: string, userEmail: 
 
     // Notify each admin/manager
     for (const admin of adminUsers) {
+      const dashboardUrl = await getDashboardUrl(admin._id.toString(), `/users/${userId}/seller-request`)
       await sendNotification(
         'NEW_SELLER_REQUEST',
         admin._id.toString(),
@@ -511,7 +559,7 @@ export const notifyAdminsNewSellerRequest = async (username: string, userEmail: 
           userEmail,
           requestDate: new Date().toLocaleDateString('vi-VN')
         },
-        `/dashboard/manager/users/${userId}/seller-request`
+        dashboardUrl
       )
     }
   } catch (error) {
@@ -522,6 +570,7 @@ export const notifyAdminsNewSellerRequest = async (username: string, userEmail: 
 // Report-related notifications
 export const notifyReportCreated = async (adminUserId: string, reportTitle: string, reportType: string, reporterName: string, reportId: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(adminUserId, 'reports')
     await sendNotification(
       'REPORT_CREATED',
       adminUserId,
@@ -531,7 +580,7 @@ export const notifyReportCreated = async (adminUserId: string, reportTitle: stri
         reporterName,
         reportDate: new Date().toLocaleDateString('vi-VN')
       },
-      `/dashboard/admin/reports`
+      dashboardUrl
     )
     
 
@@ -542,6 +591,7 @@ export const notifyReportCreated = async (adminUserId: string, reportTitle: stri
 
 export const notifyReportResolved = async (userId: string, reportTitle: string, status: string, adminNote: string, reportId: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(userId, `/reports/${reportId}`)
     await sendNotification(
       'REPORT_RESOLVED',
       userId,
@@ -551,7 +601,7 @@ export const notifyReportResolved = async (userId: string, reportTitle: string, 
         adminNote,
         resolvedDate: new Date().toLocaleDateString('vi-VN')
       },
-      `/dashboard/buyer/reports/${reportId}`
+      dashboardUrl
     )
   } catch (error) {
     console.error('Error sending report resolved notification:', error)
@@ -560,6 +610,7 @@ export const notifyReportResolved = async (userId: string, reportTitle: string, 
 
 export const notifyRefundProcessed = async (userId: string, refundAmount: number, reportTitle: string, reportId: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(userId, `/reports/${reportId}`)
     await sendNotification(
       'REFUND_PROCESSED',
       userId,
@@ -568,7 +619,7 @@ export const notifyRefundProcessed = async (userId: string, refundAmount: number
         reportTitle,
         processedDate: new Date().toLocaleDateString('vi-VN')
       },
-      `/dashboard/buyer/reports/${reportId}`
+      dashboardUrl
     )
     
 
@@ -580,11 +631,12 @@ export const notifyRefundProcessed = async (userId: string, refundAmount: number
 // Seller request approval/rejection notifications
 export const notifySellerRequestApproved = async (userId: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(userId, '/products')
     await sendNotification(
       'SELLER_REQUEST_APPROVED',
       userId,
       {},
-      '/dashboard/seller/products'
+      dashboardUrl
     )
   } catch (error) {
     console.error('Error sending seller request approved notification:', error)
@@ -593,13 +645,14 @@ export const notifySellerRequestApproved = async (userId: string) => {
 
 export const notifySellerRequestRejected = async (userId: string, note?: string) => {
   try {
+    const dashboardUrl = await getDashboardUrl(userId, '/profile')
     await sendNotification(
       'SELLER_REQUEST_REJECTED',
       userId,
       {
         note: note ? `. Lý do: ${note}` : ''
       },
-      '/dashboard/profile'
+      dashboardUrl
     )
   } catch (error) {
     console.error('Error sending seller request rejected notification:', error)

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 
 export interface Notification {
@@ -51,7 +51,7 @@ export function useNotifications(userId?: string | null) {
     hasMore: false
   });
 
-  const fetchNotifications = async (page = 1, limit?: number, unreadOnly?: boolean, category?: string, reset = true) => {
+  const fetchNotifications = useCallback(async (page = 1, limit?: number, unreadOnly?: boolean, category?: string, reset = true) => {
     if (!user && !userId) return;
     
     setState(prev => ({ ...prev, loading: true, error: null }));
@@ -59,7 +59,7 @@ export function useNotifications(userId?: string | null) {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: (limit || state.pagination.limit).toString()
+        limit: (limit || 10).toString()
       });
       
       if (unreadOnly) params.append('unreadOnly', 'true');
@@ -71,14 +71,26 @@ export function useNotifications(userId?: string | null) {
       }
       
       const data = await response.json();
-      setState(prev => ({
-        ...prev,
-        notifications: reset ? data.notifications || [] : [...prev.notifications, ...(data.notifications || [])],
-        unreadCount: data.unreadCount || 0,
-        pagination: data.pagination || prev.pagination,
-        hasMore: data.hasMore || false,
-        loading: false
-      }));
+      setState(prev => {
+        let newNotifications;
+        if (reset) {
+          newNotifications = data.notifications || [];
+        } else {
+          // When appending (loadMore), filter out duplicates
+          const existingIds = new Set(prev.notifications.map((n: Notification) => n._id));
+          const uniqueNewNotifications = (data.notifications || []).filter((n: Notification) => !existingIds.has(n._id));
+          newNotifications = [...prev.notifications, ...uniqueNewNotifications];
+        }
+        
+        return {
+          ...prev,
+          notifications: newNotifications,
+          unreadCount: data.unreadCount || 0,
+          pagination: data.pagination || prev.pagination,
+          hasMore: data.hasMore || false,
+          loading: false
+        };
+      });
     } catch (error) {
       setState(prev => ({
         ...prev,
@@ -86,7 +98,7 @@ export function useNotifications(userId?: string | null) {
         loading: false
       }));
     }
-  };
+  }, [user, userId]);
 
   const loadMore = async () => {
     if (state.loading || !state.hasMore) return;
@@ -196,7 +208,7 @@ export function useNotifications(userId?: string | null) {
     if (user || userId) {
       fetchNotifications();
     }
-  }, [user, userId]);
+  }, [user, userId, fetchNotifications]);
 
   return {
     ...state,
