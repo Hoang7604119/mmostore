@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ShoppingCart, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { ShoppingCart, Eye, EyeOff, Loader2, RefreshCw } from 'lucide-react'
 import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator'
 import { validatePassword } from '@/lib/passwordValidation'
 
@@ -22,6 +22,40 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Generate strong password
+  const generateStrongPassword = () => {
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz'
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const numbers = '0123456789'
+    const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?'
+    
+    let password = ''
+    
+    // Ensure at least one character from each category
+    password += lowercase[Math.floor(Math.random() * lowercase.length)]
+    password += uppercase[Math.floor(Math.random() * uppercase.length)]
+    password += numbers[Math.floor(Math.random() * numbers.length)]
+    password += symbols[Math.floor(Math.random() * symbols.length)]
+    
+    // Fill the rest randomly (minimum 12 characters total)
+    const allChars = lowercase + uppercase + numbers + symbols
+    for (let i = 4; i < 16; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)]
+    }
+    
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('')
+  }
+
+  const handleGeneratePassword = () => {
+    const newPassword = generateStrongPassword()
+    setFormData(prev => ({
+      ...prev,
+      password: newPassword,
+      confirmPassword: newPassword
+    }))
+  }
 
 
   // Auto complete registration after email verification
@@ -253,27 +287,39 @@ export default function RegisterPage() {
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                       Mật khẩu
                     </label>
-                    <div className="relative">
-                      <input
-                        id="password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        value={formData.password}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10 text-sm touch-manipulation"
-                        placeholder="Nhập mật khẩu (ít nhất 12 ký tự)"
-                      />
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <input
+                          id="password"
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          value={formData.password}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10 text-sm touch-manipulation"
+                          placeholder="Nhập mật khẩu (ít nhất 12 ký tự)"
+                        />
+                        <button
+                          type="button"
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center touch-manipulation"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5 text-gray-400" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-gray-400" />
+                          )}
+                        </button>
+                      </div>
+                      
+                      {/* Generate Password Button */}
                       <button
                         type="button"
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center touch-manipulation"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={handleGeneratePassword}
+                        className="w-full flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors touch-manipulation"
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5 text-gray-400" />
-                        ) : (
-                          <Eye className="h-5 w-5 text-gray-400" />
-                        )}
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Tạo mật khẩu mạnh
                       </button>
                     </div>
                     

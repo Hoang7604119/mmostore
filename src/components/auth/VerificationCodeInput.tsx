@@ -68,6 +68,35 @@ export default function VerificationCodeInput({
     }
   }
 
+  // Handle paste event
+  const handlePaste = (e: React.ClipboardEvent, index: number) => {
+    e.preventDefault()
+    const pastedData = e.clipboardData.getData('text')
+    const digits = pastedData.replace(/[^0-9]/g, '').slice(0, 6)
+    
+    if (digits.length > 0) {
+      const newCode = digits.padEnd(6, '').split('')
+      setCode(digits)
+      setVerificationError('')
+      
+      // Fill all inputs with the pasted digits
+      newCode.forEach((digit, i) => {
+        if (i < 6 && inputRefs.current[i]) {
+          inputRefs.current[i]!.value = digit || ''
+        }
+      })
+      
+      // Focus the next empty input or the last input
+      const nextIndex = Math.min(digits.length, 5)
+      inputRefs.current[nextIndex]?.focus()
+      
+      // Auto verify if we have 6 digits
+      if (digits.length === 6) {
+        handleVerifyCode(digits)
+      }
+    }
+  }
+
   // Handle backspace
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
     if (e.key === 'Backspace' && !code[index] && index > 0) {
@@ -170,6 +199,7 @@ export default function VerificationCodeInput({
                 handleCodeChange(value, index)
               }}
               onKeyDown={(e) => handleKeyDown(e, index)}
+              onPaste={(e) => handlePaste(e, index)}
               className="w-12 h-12 text-center text-xl font-bold border-2 focus:border-blue-500"
               disabled={isVerifying || isLoading}
             />
