@@ -16,6 +16,9 @@ export async function GET(request: NextRequest) {
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
     const search = searchParams.get('search')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '12')
+    const skip = (page - 1) * limit
 
     // Build query for approved products only
     const query: any = { status: 'approved' }
@@ -42,7 +45,11 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Get products with seller info
+    // Get total count for pagination
+    const totalProducts = await Product.countDocuments(query)
+    const totalPages = Math.ceil(totalProducts / limit)
+
+    // Get products with seller info and pagination
     const products = await Product.find(query)
       .populate({
         path: 'sellerId',
@@ -50,6 +57,8 @@ export async function GET(request: NextRequest) {
         options: { strictPopulate: false }
       })
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean()
 
     // Get available account counts
@@ -103,7 +112,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       products: availableProducts,
-      total: availableProducts.length 
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalProducts,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
     }, { status: 200 })
 
   } catch (error) {

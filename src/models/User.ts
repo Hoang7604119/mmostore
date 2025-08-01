@@ -1,6 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose'
-
-export type UserRole = 'admin' | 'manager' | 'seller' | 'buyer'
+import { USER_ROLES, UserRole } from '@/constants/roles'
 
 export interface IUser extends Document {
   _id: string
@@ -10,6 +9,7 @@ export interface IUser extends Document {
   role: UserRole
   isActive: boolean
   credit: number
+  pendingCredit: number // Credit đang bị giam giữ
   sellerRequest?: {
     status: 'pending' | 'approved' | 'rejected'
     requestedAt: Date
@@ -56,14 +56,19 @@ const UserSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: ['admin', 'manager', 'seller', 'buyer'],
-    default: 'buyer'
+    enum: Object.values(USER_ROLES),
+    default: USER_ROLES.BUYER
   },
   isActive: {
     type: Boolean,
     default: true
   },
   credit: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  pendingCredit: {
     type: Number,
     default: 0,
     min: 0

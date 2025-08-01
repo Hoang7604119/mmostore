@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
       }
 
       // Check admin access
-      if (pathname.startsWith('/admin') && payload.role !== 'admin') {
+      if ((pathname.startsWith('/admin') || pathname.startsWith('/dashboard/admin')) && payload.role !== 'admin') {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
 
@@ -47,7 +47,8 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/admin/:path*'
+    '/admin/:path*',
+    '/dashboard/admin/:path*'
   ],
   runtime: 'nodejs'
 }

@@ -5,6 +5,7 @@ export interface UserData {
   role: 'admin' | 'manager' | 'seller' | 'buyer'
   isActive: boolean
   credit: number
+  pendingCredit?: number
   sellerRequest?: {
     status: 'pending' | 'approved' | 'rejected'
     requestedAt: Date

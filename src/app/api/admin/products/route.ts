@@ -29,10 +29,46 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all products with seller info and account counts
-    const products = await Product.find({})
+    // Get pagination parameters
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || ''
+    const type = searchParams.get('type') || ''
+
+    // Build query
+    const query: any = {}
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { type: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } }
+      ]
+    }
+    
+    if (status && status !== 'all') {
+      query.status = status
+    }
+    
+    if (type && type !== 'all') {
+      query.type = type
+    }
+
+    const skip = (page - 1) * limit
+
+    // Get total count for pagination
+    const totalProducts = await Product.countDocuments(query)
+    const totalPages = Math.ceil(totalProducts / limit)
+
+    // Get products with pagination
+    const products = await Product.find(query)
       .populate('sellerId', 'username email')
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean()
 
     // Get account counts for each product
@@ -57,7 +93,17 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    return NextResponse.json({ products: productsWithCounts }, { status: 200 })
+    return NextResponse.json({ 
+      products: productsWithCounts,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalProducts,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    }, { status: 200 })
 
   } catch (error) {
     console.error('Get products error:', error)

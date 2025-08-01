@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/utils'
 import connectDB from '@/lib/mongodb'
-import User from '@/models/User'
+import mongoose from 'mongoose'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,42 +29,126 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user from database
-    const user = await User.findById(decoded.userId)
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Không tìm thấy user' },
-        { status: 404 }
-      )
-    }
 
-    // Check if user is seller
-    if (user.role !== 'seller') {
+
+    // Check if user has seller permissions
+    if (!['seller', 'manager', 'admin'].includes(decoded.role)) {
       return NextResponse.json(
-        { error: 'Chỉ seller mới có thể xem thống kê' },
+        { error: 'Không có quyền truy cập' },
         { status: 403 }
       )
     }
 
-    // TODO: Implement actual statistics calculation
-    // For now, return mock data
-    const stats = {
+    // Use direct mongoose query to avoid model registration issues
+    const db = mongoose.connection.db
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 500 }
+      )
+    }
+    const productsCollection = db.collection('products')
+    const ordersCollection = db.collection('orders')
+    
+    const sellerId = new mongoose.Types.ObjectId(decoded.userId)
+
+    // Get products statistics
+    const productStats = await productsCollection.aggregate([
+      {
+        $match: {
+          sellerId: sellerId
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: 1 },
+          pendingProducts: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'pending'] }, 1, 0]
+            }
+          },
+          approvedProducts: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'approved'] }, 1, 0]
+            }
+          },
+          rejectedProducts: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'rejected'] }, 1, 0]
+            }
+          },
+          totalSoldCount: { $sum: '$soldCount' },
+          averageRating: { $avg: '$rating' }
+        }
+      }
+    ]).toArray()
+
+    const productData = productStats[0] || {
       totalProducts: 0,
-      totalSales: 0,
-      totalRevenue: 0,
-      averageRating: 0,
-      totalViews: 0,
-      pendingOrders: 0
+      pendingProducts: 0,
+      approvedProducts: 0,
+      rejectedProducts: 0,
+      totalSoldCount: 0,
+      averageRating: 0
     }
 
-    // In a real implementation, you would:
-    // 1. Count products created by this seller
-    // 2. Count completed orders for this seller's products
-    // 3. Calculate total revenue from completed orders
-    // 4. Calculate average rating from product reviews
-    // 5. Sum up product views
-    // 6. Count pending orders
+    // Get orders statistics
+    const orderStats = await ordersCollection.aggregate([
+      {
+        $match: {
+          sellerId: sellerId
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: '$totalAmount' },
+          completedOrders: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'completed'] }, 1, 0]
+            }
+          },
+          completedRevenue: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'completed'] }, '$totalAmount', 0]
+            }
+          }
+        }
+      }
+    ]).toArray()
+
+    const orderData = orderStats[0] || {
+      totalOrders: 0,
+      totalRevenue: 0,
+      completedOrders: 0,
+      completedRevenue: 0
+    }
+
+    // Calculate additional metrics
+    const averageOrderValue = orderData.completedOrders > 0 
+      ? Math.round(orderData.completedRevenue / orderData.completedOrders)
+      : 0
+    
+    const conversionRate = productData.approvedProducts > 0
+      ? Math.round((orderData.totalOrders / productData.approvedProducts) * 100 * 10) / 10
+      : 0
+
+    const stats = {
+      totalProducts: productData.totalProducts,
+      pendingProducts: productData.pendingProducts,
+      approvedProducts: productData.approvedProducts,
+      rejectedProducts: productData.rejectedProducts,
+      totalSoldCount: productData.totalSoldCount,
+      averageRating: Math.round((productData.averageRating || 0) * 10) / 10, // Round to 1 decimal
+      totalOrders: orderData.totalOrders,
+      completedOrders: orderData.completedOrders,
+      totalRevenue: orderData.totalRevenue,
+      completedRevenue: orderData.completedRevenue,
+      averageOrderValue: averageOrderValue,
+      conversionRate: conversionRate // Orders per approved product
+    }
 
     return NextResponse.json(
       { 

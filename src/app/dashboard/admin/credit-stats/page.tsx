@@ -173,8 +173,19 @@ export default function AdminCreditStatsPage() {
 
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Thống kê Credit Hệ thống</h1>
-          <p className="text-gray-600">Tổng quan về tình hình credit trong hệ thống marketplace</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Thống kê Credit Hệ thống</h1>
+              <p className="text-gray-600">Tổng quan về tình hình credit trong hệ thống marketplace</p>
+            </div>
+            <Link 
+              href="/dashboard/admin/pending-credits"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <CreditCard className="h-4 w-4" />
+              <span>Quản lý Credit Giam Giữ</span>
+            </Link>
+          </div>
         </div>
 
         {/* Tổng quan hệ thống */}

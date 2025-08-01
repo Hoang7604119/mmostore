@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
           role: user.role,
           isActive: user.isActive,
           credit: user.credit || 0,
+          pendingCredit: user.pendingCredit || 0,
           sellerRequest: user.sellerRequest
         }
       },

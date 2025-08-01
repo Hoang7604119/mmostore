@@ -328,12 +328,29 @@ export default function CreditPage() {
         {/* Credit Overview */}
         <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-3xl p-8 text-white mb-8 shadow-2xl border border-white/20 backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Số dư hiện tại</h2>
-              <p className="text-4xl font-bold">
-                {(user.credit || 0).toLocaleString('vi-VN')} VNĐ
-              </p>
-              <p className="text-blue-100 mt-2">Tài khoản: {user.username}</p>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-4">Thông tin Credit</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-blue-100 text-sm mb-1">Credit khả dụng</p>
+                  <p className="text-3xl font-bold">
+                    {(user.credit || 0).toLocaleString('vi-VN')} VNĐ
+                  </p>
+                </div>
+                <div>
+                  <p className="text-blue-100 text-sm mb-1">Credit đang giam giữ</p>
+                  <p className="text-2xl font-bold text-yellow-200">
+                    {(user.pendingCredit || 0).toLocaleString('vi-VN')} VNĐ
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-blue-400/30">
+                <p className="text-blue-100 text-sm mb-1">Tổng credit</p>
+                <p className="text-xl font-semibold">
+                  {((user.credit || 0) + (user.pendingCredit || 0)).toLocaleString('vi-VN')} VNĐ
+                </p>
+                <p className="text-blue-100 text-sm mt-2">Tài khoản: {user.username}</p>
+              </div>
             </div>
             <div className="text-right">
               <Wallet className="h-16 w-16 text-blue-200 mb-4" />
@@ -635,6 +652,13 @@ export default function CreditPage() {
               <div className="space-y-3">
 
                 <button 
+                  onClick={() => router.push('/dashboard/pending-credits')}
+                  className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200/50 rounded-xl hover:bg-gradient-to-r hover:from-yellow-50/50 hover:to-orange-50/50 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]"
+                >
+                  <Clock className="h-5 w-5 text-yellow-600" />
+                  <span className="text-sm font-medium">Quản lý Credit giam giữ</span>
+                </button>
+                <button 
                   onClick={() => {
                     // Scroll to transaction history section
                     const historySection = document.querySelector('[data-section="transaction-history"]')
@@ -645,11 +669,28 @@ export default function CreditPage() {
                   className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200/50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]"
                 >
                   <Clock className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-medium">Lịch sử chi tiết</span>
+                  <span className="text-sm font-medium">Lịch sử giao dịch</span>
                 </button>
-                <button className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200/50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]">
+                <button 
+                  onClick={() => setActiveTab('deposit')}
+                  className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200/50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]"
+                >
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm font-medium">Nạp Credit nhanh</span>
+                </button>
+                <button 
+                  onClick={() => setActiveTab('withdraw')}
+                  className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200/50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]"
+                >
+                  <TrendingDown className="h-5 w-5 text-red-600" />
+                  <span className="text-sm font-medium">Rút tiền nhanh</span>
+                </button>
+                <button 
+                  onClick={() => window.open(`mailto:${getContactEmail('SUPPORT')}`, '_blank')}
+                  className="w-full flex items-center space-x-3 p-3 text-left border border-gray-200/50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]"
+                >
                   <Shield className="h-5 w-5 text-purple-600" />
-                  <span className="text-sm font-medium">Bảo mật tài khoản</span>
+                  <span className="text-sm font-medium">Liên hệ hỗ trợ</span>
                 </button>
               </div>
             </div>

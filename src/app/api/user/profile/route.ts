@@ -129,6 +129,7 @@ export async function PUT(request: NextRequest) {
           role: updatedUser.role,
           isActive: updatedUser.isActive,
           credit: updatedUser.credit || 0,
+          pendingCredit: updatedUser.pendingCredit || 0,
           sellerRequest: updatedUser.sellerRequest,
           createdAt: updatedUser.createdAt,
           updatedAt: updatedUser.updatedAt
@@ -189,6 +190,7 @@ export async function GET(request: NextRequest) {
           role: user.role,
           isActive: user.isActive,
           credit: user.credit || 0,
+          pendingCredit: user.pendingCredit || 0,
           sellerRequest: user.sellerRequest,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt

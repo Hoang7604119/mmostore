@@ -256,7 +256,7 @@ export default function PrivacyPage() {
                 <p>Nếu bạn có bất kỳ câu hỏi nào về chính sách bảo mật này hoặc muốn thực hiện quyền của mình, vui lòng liên hệ:</p>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <ul className="space-y-2">
-                    <li><strong>Email:</strong> privacy@mmostore.site</li>
+                    <li><strong>Email:</strong> support@mail.mmostore.site</li>
                     <li><strong>Điện thoại:</strong> +84 123 456 789</li>
                     <li><strong>Địa chỉ:</strong> 123 Đường ABC, Quận 1, TP.HCM</li>
                     <li><strong>Thời gian phản hồi:</strong> Trong vòng 30 ngày</li>

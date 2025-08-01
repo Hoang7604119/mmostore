@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Minus, User, CreditCard, RefreshCw, ShoppingCart, LogOut, DollarSign, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Plus, Minus, User, CreditCard, RefreshCw, DollarSign, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import Header from '@/components/Header'
 
 interface User {
   _id: string
   username: string
   email: string
   credit: number
-  role: string
+  role: 'admin' | 'manager' | 'seller' | 'buyer'
 }
 
 interface CurrentUser {
@@ -18,7 +19,8 @@ interface CurrentUser {
   username: string
   email: string
   credit: number
-  role: string
+  role: 'admin' | 'manager' | 'seller' | 'buyer'
+  isActive: boolean
 }
 
 interface WithdrawalRequest {
@@ -48,7 +50,7 @@ export default function AdminCreditPage() {
   const [selectedUser, setSelectedUser] = useState<string>('')
   const [amount, setAmount] = useState<number>(0)
   const [action, setAction] = useState<'add' | 'subtract'>('add')
-  const [activeTab, setActiveTab] = useState<'credit' | 'withdrawals'>('credit')
+  const [activeTab, setActiveTab] = useState<'credit' | 'withdrawals' | 'pending'>('credit')
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([])
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(false)
   const router = useRouter()
@@ -209,7 +211,7 @@ export default function AdminCreditPage() {
     }
   }
 
-  if (loading) {
+  if (loading || !currentUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -222,98 +224,56 @@ export default function AdminCreditPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <ShoppingCart className="h-8 w-8 text-blue-600" />
-                <span className="ml-2 text-xl font-bold text-gray-900">MMO Store</span>
-              </Link>
+      <Header user={currentUser} onLogout={handleLogout} />
+      
+      {/* Page Content Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Quản lý Credit & Rút tiền</h1>
+              <p className="text-gray-600 mt-1">Quản lý credit và xử lý yêu cầu rút tiền</p>
             </div>
-
-            {/* Navigation & User Info */}
-            <div className="flex items-center space-x-6">
-              <nav className="flex space-x-4">
-                <Link href="/marketplace" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                  Marketplace
-                </Link>
-                <Link href="/dashboard/admin" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                  Dashboard
-                </Link>
-                <Link href="/dashboard/admin/users" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                  Quản lý Users
-                </Link>
-                <span className="text-blue-600 text-sm font-medium">
+          </div>
+          
+          {/* Tabs */}
+          <div className="mt-4">
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
+                <button
+                  onClick={() => setActiveTab('credit')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'credit'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <CreditCard className="h-4 w-4 inline-block mr-2" />
                   Quản lý Credit
-                </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('withdrawals')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'withdrawals'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <DollarSign className="h-4 w-4 inline-block mr-2" />
+                  Yêu cầu rút tiền
+                </button>
+                <Link
+                  href="/admin/credit/pending-credits"
+                  className="py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                >
+                  <Clock className="h-4 w-4 inline-block mr-2" />
+                  Pending Credits
+                </Link>
               </nav>
-              
-              {currentUser && (
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">{currentUser.username}</div>
-                    <div className="text-xs text-gray-500">
-                      {currentUser.credit.toLocaleString('vi-VN')} VNĐ • {currentUser.role}
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-400 hover:text-gray-600"
-                    title="Đăng xuất"
-                  >
-                    <LogOut className="h-5 w-5" />
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
-        
-        {/* Page Title */}
-        <div className="bg-gray-50 border-t">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Quản lý Credit & Rút tiền</h1>
-                <p className="text-gray-600 mt-1">Quản lý credit và xử lý yêu cầu rút tiền</p>
-              </div>
-            </div>
-            
-            {/* Tabs */}
-            <div className="mt-4">
-              <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8">
-                  <button
-                    onClick={() => setActiveTab('credit')}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === 'credit'
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <CreditCard className="h-4 w-4 inline-block mr-2" />
-                    Quản lý Credit
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('withdrawals')}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === 'withdrawals'
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <DollarSign className="h-4 w-4 inline-block mr-2" />
-                    Yêu cầu rút tiền
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'credit' ? (

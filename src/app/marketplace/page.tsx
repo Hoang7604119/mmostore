@@ -7,6 +7,7 @@ import { ShoppingCart, Search, Filter, Star, Package, User, LogOut, ArrowLeft, G
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import Pagination from '@/components/ui/Pagination'
 import { CONTACT_INFO } from '@/config/contact'
 import { getProductTypeImage, hasValidImage, getFallbackDisplay } from '@/lib/imageUtils'
 
@@ -54,6 +55,15 @@ interface ProductType {
   order: number
 }
 
+interface PaginationInfo {
+  currentPage: number
+  totalPages: number
+  totalProducts: number
+  limit: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
 export default function MarketplacePage() {
   const searchParams = useSearchParams()
   const [user, setUser] = useState<User | null>(null)
@@ -71,12 +81,35 @@ export default function MarketplacePage() {
   const [purchaseQuantity, setPurchaseQuantity] = useState(1)
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [productToPurchase, setProductToPurchase] = useState<Product | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
+  const [productsPerPage] = useState(12)
+  const [productCounts, setProductCounts] = useState<Record<string, number>>({})
+  const [productCountsLoaded, setProductCountsLoaded] = useState(false)
 
   useEffect(() => {
     checkAuth()
-    fetchProducts()
+    fetchProducts(1)
     fetchProductTypes()
+    fetchProductCounts()
   }, [])
+
+
+
+  // Refetch products when filters change
+  useEffect(() => {
+    if (!loading) {
+      setCurrentPage(1)
+      fetchProducts(1)
+    }
+  }, [selectedType, categoryFilter, priceRange, searchTerm])
+
+  // Fetch products when page changes
+  useEffect(() => {
+    if (!loading) {
+      fetchProducts(currentPage)
+    }
+  }, [currentPage])
 
   // Handle URL query parameter for type
   useEffect(() => {
@@ -98,15 +131,27 @@ export default function MarketplacePage() {
     }
   }
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page: number = currentPage) => {
     try {
-      const response = await fetch('/api/buyer/products', {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: productsPerPage.toString()
+      })
+      
+      if (selectedType) params.append('type', selectedType)
+      if (categoryFilter !== 'all') params.append('category', categoryFilter)
+      if (priceRange.min) params.append('minPrice', priceRange.min)
+      if (priceRange.max) params.append('maxPrice', priceRange.max)
+      if (searchTerm) params.append('search', searchTerm)
+      
+      const response = await fetch(`/api/buyer/products?${params.toString()}`, {
         credentials: 'include'
       })
       
       if (response.ok) {
         const data = await response.json()
         setProducts(data.products)
+        setPagination(data.pagination)
       }
     } catch (error) {
       console.error('Error fetching products:', error)
@@ -127,6 +172,30 @@ export default function MarketplacePage() {
       console.error('Error fetching product types:', error)
     }
   }
+
+  const fetchProductCounts = async () => {
+    try {
+      const response = await fetch('/api/buyer/product-counts')
+      
+      if (response.ok) {
+        const data = await response.json()
+        setProductCounts(data.productCounts)
+        setProductCountsLoaded(true)
+      } else {
+        console.error('Failed to fetch product counts:', response.status, response.statusText)
+      }
+    } catch (error) {
+      console.error('Error fetching product counts:', error)
+    }
+  }
+
+  const handlePageChange = async (newPage: number) => {
+    setCurrentPage(newPage)
+    setLoading(true)
+    await fetchProducts(newPage)
+  }
+
+
 
   const handleLogout = async () => {
     try {
@@ -231,6 +300,7 @@ export default function MarketplacePage() {
         setUser(prev => prev ? { ...prev, credit: data.order?.remainingCredit || 0 } : null)
         
         fetchProducts() // Refresh products
+        fetchProductCounts() // Refresh product counts
         setSelectedProduct(null)
         setShowPurchaseModal(false)
         setProductToPurchase(null)
@@ -245,20 +315,10 @@ export default function MarketplacePage() {
     }
   }
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.seller?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesType = !selectedType || product.type === selectedType
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter
-    const matchesPrice = (!priceRange.min || product.pricePerUnit >= parseInt(priceRange.min)) &&
-                        (!priceRange.max || product.pricePerUnit <= parseInt(priceRange.max))
-    return matchesSearch && matchesType && matchesCategory && matchesPrice
-  })
+  // Products are already filtered server-side
 
   const getProductCountByType = (type: string) => {
-    return products.filter(product => product.type === type && product.status !== 'sold_out').length
+    return productCounts[type] || 0
   }
 
   // Helper function to convert hex color to Tailwind classes
@@ -461,7 +521,7 @@ export default function MarketplacePage() {
                       <div className="flex items-center justify-center space-x-2 bg-gray-50/80 rounded-full px-4 py-2 group-hover:bg-blue-50/80 transition-colors duration-300">
                         <Package className="h-4 w-4 text-gray-500 group-hover:text-blue-500 transition-colors duration-300" />
                         <span className="text-sm text-gray-700 font-semibold group-hover:text-blue-700 transition-colors duration-300">
-                          {productCount} sản phẩm có sẵn
+                          {productCountsLoaded ? `${productCount} sản phẩm có sẵn` : 'Đang tải...'}
                         </span>
                       </div>
                       
@@ -504,7 +564,7 @@ export default function MarketplacePage() {
               
               <div className="flex items-center justify-between sm:justify-end space-x-3">
                 <div className="text-sm text-gray-600">
-                  <span className="font-medium">{filteredProducts.length}</span> sản phẩm
+                  <span className="font-medium">{products.length}</span> sản phẩm
                 </div>
                 <div className="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 p-1">
                   <button
@@ -639,7 +699,7 @@ export default function MarketplacePage() {
               </div>
             ) : (
               <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
-                {filteredProducts.map((product) => {
+                {products.map((product) => {
                   const typeInfo = productTypes.find(t => t.name === product.type)
                   return (
                     <div key={product._id} className={`${viewMode === 'grid' ? 'group relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300' : 'bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden border border-gray-100 flex'}`}>
@@ -915,7 +975,7 @@ export default function MarketplacePage() {
               </div>
             )}
             
-            {!loading && filteredProducts.length === 0 && (
+            {!loading && products.length === 0 && (
               <div className="text-center py-12">
                 <Package className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-lg font-medium text-gray-900">Không có sản phẩm nào</h3>
@@ -927,6 +987,17 @@ export default function MarketplacePage() {
                   ← Quay lại chọn loại khác
                 </button>
               </div>
+            )}
+
+            {/* Pagination */}
+            {!loading && products.length > 0 && pagination && pagination.totalPages > 1 && (
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+                itemsPerPage={pagination.limit}
+                totalItems={pagination.totalProducts}
+              />
             )}
           </div>
         )}

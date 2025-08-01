@@ -4,9 +4,11 @@ import Product from '@/models/Product'
 import AccountItem from '@/models/AccountItem'
 import User from '@/models/User'
 import Order from '@/models/Order'
+import PendingCredit from '@/models/PendingCredit'
 import { verifyToken } from '@/lib/utils'
 import mongoose from 'mongoose'
 import { notifyOrderCreated, notifyProductSold } from '@/utils/notificationHelpers'
+import { CREDIT_HOLD_CONFIG, CREDIT_HOLD_REASONS } from '@/constants/credit'
 
 export const dynamic = 'force-dynamic'
 
@@ -135,10 +137,14 @@ export async function POST(request: NextRequest) {
           throw new Error('Không đủ credit để thực hiện giao dịch')
         }
 
-        // 3. Cộng credit cho seller (với session)
+        // 3. Tạo PendingCredit cho seller thay vì cộng credit trực tiếp
+        const releaseDate = new Date()
+        releaseDate.setTime(releaseDate.getTime() + CREDIT_HOLD_CONFIG.HOLD_DURATION_MS)
+        
+        // Cập nhật pendingCredit cho seller
         seller = await User.findByIdAndUpdate(
           product.sellerId._id,
-          { $inc: { credit: totalAmount } },
+          { $inc: { pendingCredit: totalAmount } },
           { session, new: true }
         )
 
@@ -171,7 +177,19 @@ export async function POST(request: NextRequest) {
         
         newOrder = await orderData.save({ session })
 
-        // 6. Cập nhật product sold count và kiểm tra sold out
+        // 6. Tạo PendingCredit record
+        const pendingCreditData = new PendingCredit({
+          userId: product.sellerId._id,
+          amount: totalAmount,
+          reason: CREDIT_HOLD_REASONS.SALE_COMMISSION,
+          orderId: newOrder._id,
+          releaseDate: releaseDate,
+          note: `Credit từ bán hàng - Đơn hàng #${orderNumber}`
+        })
+        
+        await pendingCreditData.save({ session })
+
+        // 7. Cập nhật product sold count và kiểm tra sold out
         const remainingAccounts = await AccountItem.countDocuments({
           productId: productId,
           status: 'available'

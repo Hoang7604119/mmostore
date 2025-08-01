@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
         username: user.username,
         email: user.email,
         role: user.role,
-        credit: user.credit
+        credit: user.credit,
+        pendingCredit: user.pendingCredit || 0
       }
     })
   } catch (error) {

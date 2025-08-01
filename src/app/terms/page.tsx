@@ -124,11 +124,10 @@ export default function TermsPage() {
                 <h2 className="text-2xl font-bold text-gray-900">4. Thanh toán và phí dịch vụ</h2>
               </div>
               <div className="space-y-4 text-gray-600">
-                <p>Chúng tôi thu phí dịch vụ từ mỗi giao dịch thành công:</p>
+                <p>Chính sách phí dịch vụ của chúng tôi:</p>
                 <ul className="space-y-2 ml-4">
-                  <li>• Phí người bán: 5% giá trị đơn hàng</li>
-                  <li>• Phí người mua: 2% giá trị đơn hàng</li>
-                  <li>• Phí rút tiền: 10,000 VNĐ/lần rút</li>
+                  <li>• Mua bán: Hoàn toàn miễn phí cho cả người mua và người bán</li>
+                  <li>• Phí rút tiền: 2% mỗi lượt rút (tối thiểu 50,000 VNĐ)</li>
                   <li>• Thanh toán được xử lý qua PayOS với các phương thức: Thẻ ATM, Ví điện tử, QR Code</li>
                 </ul>
                 <p>Tất cả giao dịch đều được bảo vệ bởi hệ thống escrow, đảm bảo an toàn cho cả người mua và người bán.</p>

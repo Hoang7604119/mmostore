@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ShoppingCart, Package, CheckCircle, XCircle, Eye, LogOut, ArrowLeft, Search, Filter, Plus, Edit, Trash2 } from 'lucide-react'
 import { UserData } from '@/types/user'
 import Header from '@/components/Header'
+import Pagination from '@/components/ui/Pagination'
 
 
 
@@ -20,14 +21,23 @@ interface Product {
   category: string
   status: 'pending' | 'approved' | 'rejected' | 'sold_out'
   createdAt: string
-  sellerId: {
+  sellerId?: {
     _id: string
     username: string
     email: string
-  }
+  } | null
   totalAccounts?: number
   availableAccounts?: number
   soldAccounts?: number
+}
+
+interface PaginationInfo {
+  currentPage: number
+  totalPages: number
+  totalProducts: number
+  limit: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
 }
 
 export default function AdminProductsPage() {
@@ -40,6 +50,9 @@ export default function AdminProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
+  const [productsPerPage] = useState(10)
   const router = useRouter()
 
   useEffect(() => {
@@ -53,7 +66,7 @@ export default function AdminProductsPage() {
           return
         }
         setUser(data.user)
-        await fetchProducts()
+        await fetchProducts(1)
       } else {
         router.push('/auth/login')
       }
@@ -68,9 +81,24 @@ export default function AdminProductsPage() {
     checkAuth()
   }, [router])
 
-  const fetchProducts = async () => {
+  // Effect to handle search and filter changes
+  useEffect(() => {
+    if (user) {
+      fetchProducts(1, searchTerm, statusFilter, typeFilter)
+    }
+  }, [searchTerm, statusFilter, typeFilter, user])
+
+  const fetchProducts = async (page: number = currentPage, search: string = searchTerm, status: string = statusFilter, type: string = typeFilter) => {
     try {
-      const response = await fetch('/api/admin/products', {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: productsPerPage.toString(),
+        ...(search && { search }),
+        ...(status !== 'all' && { status }),
+        ...(type !== 'all' && { type })
+      })
+      
+      const response = await fetch(`/api/admin/products?${params}`, {
         method: 'GET',
         credentials: 'include'
       })
@@ -78,12 +106,18 @@ export default function AdminProductsPage() {
       if (response.ok) {
         const data = await response.json()
         setProducts(data.products)
+        setPagination(data.pagination)
+        setCurrentPage(page)
       } else {
         console.error('Error fetching products:', response.statusText)
       }
     } catch (error) {
       console.error('Error fetching products:', error)
     }
+  }
+
+  const handlePageChange = async (newPage: number) => {
+    await fetchProducts(newPage, searchTerm, statusFilter, typeFilter)
   }
 
   const handleStatusChange = async (productId: string, newStatus: string) => {
@@ -196,15 +230,7 @@ export default function AdminProductsPage() {
 
 
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.sellerId.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesStatus = statusFilter === 'all' || product.status === statusFilter
-    const matchesType = typeFilter === 'all' || product.type === typeFilter
-    return matchesSearch && matchesStatus && matchesType
-  })
+  // Products are now filtered on the server side
 
   if (loading) {
     return (
@@ -318,7 +344,7 @@ export default function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
+                {products.map((product) => (
                   <tr key={product._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
@@ -336,8 +362,8 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.sellerId.username}</div>
-                      <div className="text-sm text-gray-500">{product.sellerId.email}</div>
+                      <div className="text-sm text-gray-900">{product.sellerId?.username || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">{product.sellerId?.email || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -408,12 +434,23 @@ export default function AdminProductsPage() {
             </table>
           </div>
           
-          {filteredProducts.length === 0 && (
+          {products.length === 0 && (
             <div className="text-center py-12">
               <Package className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">Không có sản phẩm nào</h3>
               <p className="mt-1 text-sm text-gray-500">Chưa có sản phẩm nào phù hợp với bộ lọc.</p>
             </div>
+          )}
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={pagination.limit}
+              totalItems={pagination.totalProducts}
+            />
           )}
         </div>
       </div>
@@ -453,7 +490,10 @@ export default function AdminProductsPage() {
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl border border-green-100">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Người bán</label>
                   <p className="text-sm font-medium text-gray-900">
-                    {selectedProduct.sellerId.username} ({selectedProduct.sellerId.email})
+                    {selectedProduct.sellerId ? 
+                      `${selectedProduct.sellerId.username} (${selectedProduct.sellerId.email})` : 
+                      'Không có thông tin người bán'
+                    }
                   </p>
                 </div>
                 

@@ -39,10 +39,44 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get products for this seller
-    const products = await Product.find({ sellerId: decoded.userId })
+    // Get pagination parameters
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '12')
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || ''
+
+    // Build query
+    const query: any = { sellerId: decoded.userId }
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } }
+      ]
+    }
+    
+    if (status && status !== 'all') {
+      query.status = status
+    }
+
+    // Get total count and status statistics
+    const totalProducts = await Product.countDocuments({ sellerId: decoded.userId })
+    const pendingCount = await Product.countDocuments({ sellerId: decoded.userId, status: 'pending' })
+    const approvedCount = await Product.countDocuments({ sellerId: decoded.userId, status: 'approved' })
+    const rejectedCount = await Product.countDocuments({ sellerId: decoded.userId, status: 'rejected' })
+    
+    const filteredTotal = await Product.countDocuments(query)
+    const totalPages = Math.ceil(filteredTotal / limit)
+    const skip = (page - 1) * limit
+
+    // Get products for this seller with pagination
+    const products = await Product.find(query)
       .populate('sellerId', 'username email')
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
 
     // Get account counts for each product
     const productsWithCounts = await Promise.all(
@@ -66,7 +100,23 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    return NextResponse.json({ products: productsWithCounts }, { status: 200 })
+    return NextResponse.json({ 
+      products: productsWithCounts,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalProducts: filteredTotal,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
+      statistics: {
+        totalProducts,
+        pendingCount,
+        approvedCount,
+        rejectedCount
+      }
+    }, { status: 200 })
 
   } catch (error) {
     console.error('Get seller products error:', error)

@@ -74,7 +74,7 @@ const faqData: FAQItem[] = [
     id: 8,
     category: 'Thanh toán & Phí',
     question: 'Phí dịch vụ là bao nhiêu?',
-    answer: 'Phí người bán: 5% giá trị đơn hàng. Phí người mua: 2% giá trị đơn hàng. Phí rút tiền: 10,000 VNĐ/lần. Không có phí ẩn nào khác.',
+    answer: 'Mua bán hoàn toàn miễn phí cho cả người mua và người bán. Chỉ tính phí rút tiền 2% mỗi lượt rút (tối thiểu 50,000 VNĐ). Không có phí ẩn nào khác.',
     icon: <CreditCard className="w-5 h-5" />
   },
   {
@@ -127,7 +127,7 @@ const faqData: FAQItem[] = [
     id: 15,
     category: 'Hỗ trợ & Tranh chấp',
     question: 'Làm thế nào để liên hệ hỗ trợ?',
-    answer: 'Bạn có thể liên hệ qua: Email support@mmostore.site, Hotline +84 123 456 789, hoặc chat trực tiếp trên website. Chúng tôi hỗ trợ 24/7.',
+    answer: 'Bạn có thể liên hệ qua: Email support@mail.mmostore.site, Hotline +84 123 456 789, hoặc chat trực tiếp trên website. Chúng tôi hỗ trợ 24/7.',
     icon: <MessageCircle className="w-5 h-5" />
   },
   {
@@ -150,7 +150,7 @@ const faqData: FAQItem[] = [
     id: 18,
     category: 'Kỹ thuật',
     question: 'Website bị lỗi, tôi không thể truy cập?',
-    answer: 'Thử làm mới trang, xóa cache trình duyệt, hoặc thử trình duyệt khác. Nếu vẫn lỗi, liên hệ hỗ trợ kỹ thuật qua email tech@mmostore.site.',
+    answer: 'Thử làm mới trang, xóa cache trình duyệt, hoặc thử trình duyệt khác. Nếu vẫn lỗi, liên hệ hỗ trợ kỹ thuật qua email support@mail.mmostore.site.',
     icon: <HelpCircle className="w-5 h-5" />
   },
   {
@@ -329,7 +329,7 @@ export default function FAQPage() {
                 Liên hệ hỗ trợ
               </a>
               <a
-                href="mailto:support@mmostore.site"
+                href="mailto:support@mail.mmostore.site"
                 className="border-2 border-white text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-white hover:text-purple-600 transition-colors touch-manipulation"
               >
                 Gửi email

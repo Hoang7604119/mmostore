@@ -11,8 +11,24 @@ interface User extends UserData {
   credit: number
 }
 
+interface SellerStats {
+  totalProducts: number
+  pendingProducts: number
+  approvedProducts: number
+  rejectedProducts: number
+  totalSoldCount: number
+  averageRating: number
+  totalOrders: number
+  completedOrders: number
+  totalRevenue: number
+  completedRevenue: number
+  averageOrderValue: number
+  conversionRate: number
+}
+
 export default function SellerDashboard() {
   const [user, setUser] = useState<User | null>(null)
+  const [stats, setStats] = useState<SellerStats | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -27,6 +43,13 @@ export default function SellerDashboard() {
             return
           }
           setUser(data.user)
+          
+          // Fetch seller stats
+          const statsResponse = await fetch('/api/seller/stats')
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json()
+            setStats(statsData.stats)
+          }
         } else {
           router.push('/auth/login')
         }
@@ -97,7 +120,7 @@ export default function SellerDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Sản phẩm</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.totalProducts || 0}</p>
               </div>
             </div>
           </div>
@@ -109,7 +132,7 @@ export default function SellerDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Doanh thu</p>
-                <p className="text-2xl font-bold text-gray-900">0đ</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.completedRevenue?.toLocaleString('vi-VN') || 0}đ</p>
               </div>
             </div>
           </div>
@@ -121,7 +144,7 @@ export default function SellerDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Đơn hàng</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.totalOrders || 0}</p>
               </div>
             </div>
           </div>
@@ -133,11 +156,13 @@ export default function SellerDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Chờ duyệt</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.pendingProducts || 0}</p>
               </div>
             </div>
           </div>
         </div>
+
+
 
         {/* Seller Actions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -167,6 +192,19 @@ export default function SellerDashboard() {
             </div>
           </Link>
 
+          {/* Orders */}
+          <Link href="/dashboard/seller/orders" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer block">
+            <div className="flex items-center">
+              <div className="bg-orange-100 p-3 rounded-full">
+                <ShoppingCart className="h-6 w-6 text-orange-600" />
+              </div>
+              <div className="ml-4">
+                <h3 className="font-semibold text-gray-900">Đơn hàng đã bán được</h3>
+                <p className="text-sm text-gray-600">Quản lý các đơn hàng đã bán</p>
+              </div>
+            </div>
+          </Link>
+
           {/* Reviews */}
           <Link href="/dashboard/seller/reviews" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer block">
             <div className="flex items-center">
@@ -183,8 +221,8 @@ export default function SellerDashboard() {
           {/* Reports */}
           <Link href="/dashboard/seller/reports" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer block">
             <div className="flex items-center">
-              <div className="bg-orange-100 p-3 rounded-full">
-                <AlertTriangle className="h-6 w-6 text-orange-600" />
+              <div className="bg-red-100 p-3 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <div className="ml-4">
                 <h3 className="font-semibold text-gray-900">Báo Cáo</h3>
@@ -194,7 +232,7 @@ export default function SellerDashboard() {
           </Link>
 
           {/* Sales Analytics */}
-          <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/dashboard/seller/stats" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer block">
             <div className="flex items-center">
               <div className="bg-purple-100 p-3 rounded-full">
                 <TrendingUp className="h-6 w-6 text-purple-600" />
@@ -204,7 +242,7 @@ export default function SellerDashboard() {
                 <p className="text-sm text-gray-600">Xem báo cáo bán hàng</p>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Recent Products */}

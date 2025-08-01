@@ -7,6 +7,7 @@ import { ShoppingCart, Package, Plus, Edit, Trash2, Eye, LogOut, ArrowLeft, Sear
 import { UserData } from '@/types/user'
 import Header from '@/components/Header'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import Pagination, { usePagination } from '@/components/ui/Pagination'
 
 interface User extends UserData {
   credit: number
@@ -43,6 +44,18 @@ export default function SellerProductsPage() {
     pricePerUnit: '',
     category: 'facebook'
   })
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalProducts: 0,
+    limit: 12
+  })
+  const [statistics, setStatistics] = useState({
+    totalProducts: 0,
+    pendingCount: 0,
+    approvedCount: 0,
+    rejectedCount: 0
+  })
   const router = useRouter()
 
   useEffect(() => {
@@ -56,7 +69,7 @@ export default function SellerProductsPage() {
           return
         }
         setUser(data.user)
-        await fetchProducts()
+        await fetchProducts(1, searchTerm, statusFilter)
       } else {
         router.push('/auth/login')
       }
@@ -71,9 +84,27 @@ export default function SellerProductsPage() {
     checkAuth()
   }, [router])
 
-  const fetchProducts = async () => {
+  // Handle search and filter changes
+  useEffect(() => {
+    if (user) {
+      fetchProducts(1, searchTerm, statusFilter)
+    }
+  }, [searchTerm, statusFilter])
+
+  const handlePageChange = (page: number) => {
+    fetchProducts(page, searchTerm, statusFilter)
+  }
+
+  const fetchProducts = async (page = 1, search = '', status = 'all') => {
     try {
-      const response = await fetch('/api/seller/products', {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString(),
+        ...(search && { search }),
+        ...(status !== 'all' && { status })
+      })
+      
+      const response = await fetch(`/api/seller/products?${params}`, {
         method: 'GET',
         credentials: 'include'
       })
@@ -81,6 +112,15 @@ export default function SellerProductsPage() {
       if (response.ok) {
         const data = await response.json()
         setProducts(data.products || [])
+        setPagination({
+          currentPage: data.pagination.currentPage,
+          totalPages: data.pagination.totalPages,
+          totalProducts: data.pagination.totalProducts,
+          limit: data.pagination.limit
+        })
+        if (data.statistics) {
+          setStatistics(data.statistics)
+        }
       } else {
         console.error('Failed to fetch products')
       }
@@ -175,11 +215,7 @@ export default function SellerProductsPage() {
     }
   }
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || product.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  // Filtering is now handled by the API
 
   const categories = ['facebook', 'gmail', 'instagram', 'twitter', 'tiktok', 'youtube', 'linkedin', 'other']
 
@@ -224,24 +260,24 @@ export default function SellerProductsPage() {
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
             <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
-              <div className="text-lg sm:text-2xl font-bold text-blue-600">{products.length}</div>
+              <div className="text-lg sm:text-2xl font-bold text-blue-600">{statistics.totalProducts}</div>
               <div className="text-xs sm:text-sm text-gray-600">Tổng sản phẩm</div>
             </div>
             <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg">
               <div className="text-lg sm:text-2xl font-bold text-yellow-600">
-                {products.filter(p => p.status === 'pending').length}
+                {statistics.pendingCount}
               </div>
               <div className="text-xs sm:text-sm text-gray-600">Chờ duyệt</div>
             </div>
             <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
               <div className="text-lg sm:text-2xl font-bold text-green-600">
-                {products.filter(p => p.status === 'approved').length}
+                {statistics.approvedCount}
               </div>
               <div className="text-xs sm:text-sm text-gray-600">Đã duyệt</div>
             </div>
             <div className="bg-red-50 p-3 sm:p-4 rounded-lg">
               <div className="text-lg sm:text-2xl font-bold text-red-600">
-                {products.filter(p => p.status === 'rejected').length}
+                {statistics.rejectedCount}
               </div>
               <div className="text-xs sm:text-sm text-gray-600">Từ chối</div>
             </div>
@@ -278,7 +314,7 @@ export default function SellerProductsPage() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredProducts.map((product) => (
+          {products.map((product) => (
             <div key={product._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
               <div className="p-4 sm:p-6">
                 <div className="flex items-start justify-between mb-4">
@@ -357,17 +393,31 @@ export default function SellerProductsPage() {
           ))}
         </div>
         
-        {filteredProducts.length === 0 && (
-          <div className="bg-white rounded-lg shadow p-6 sm:p-8 text-center">
+        {products.length === 0 && (
+          <div className="col-span-full text-center py-12">
             <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">Chưa có sản phẩm nào</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Không có sản phẩm nào</h3>
+            <p className="text-gray-500 mb-4">Bạn chưa có sản phẩm nào. Hãy tạo sản phẩm đầu tiên!</p>
             <Link
               href="/dashboard/seller/products/create"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto touch-manipulation w-full sm:w-auto"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Tạo sản phẩm đầu tiên
+              Tạo sản phẩm mới
             </Link>
+          </div>
+        )}
+        
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="mt-8">
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={pagination.limit}
+              totalItems={pagination.totalProducts}
+            />
           </div>
         )}
       </div>

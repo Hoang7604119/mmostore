@@ -41,8 +41,8 @@ export const APP_CONFIG = {
   // Cài đặt email
   EMAIL: {
     FROM_NAME: 'MMO Store',
-    REPLY_TO: 'noreply@mmostore.site',
-    SUPPORT_EMAIL: 'support@mmostore.site'
+    REPLY_TO: 'notifications@mail.mmostore.site',
+    SUPPORT_EMAIL: 'support@mail.mmostore.site'
   },
   
   // Cài đặt thông báo
