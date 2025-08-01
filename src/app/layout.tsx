@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import ClientWrapper from '@/components/ClientWrapper'
@@ -7,10 +7,10 @@ import { CONTACT_INFO } from '@/config/contact'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: CONTACT_INFO.COMPANY_NAME,
   description: CONTACT_INFO.COMPANY_DESCRIPTION,
   manifest: '/manifest.json',
-  themeColor: '#2563eb',
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -48,11 +48,6 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1
-  },
   openGraph: {
     type: 'website',
     siteName: CONTACT_INFO.COMPANY_NAME,
@@ -66,6 +61,13 @@ export const metadata: Metadata = {
     description: CONTACT_INFO.COMPANY_DESCRIPTION,
     images: ['/apple-touch-icon.png']
   }
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#2563eb'
 }
 
 export default function RootLayout({
