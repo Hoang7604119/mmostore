@@ -61,7 +61,6 @@ export const metadata: Metadata = {
     ]
   },
   appleWebApp: {
-    capable: true,
     statusBarStyle: 'default',
     title: CONTACT_INFO.COMPANY_NAME,
     startupImage: '/apple-touch-icon.png'
@@ -103,7 +102,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-
+      <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className={inter.className}>
         <ClientWrapper>
           <div className="min-h-screen bg-background flex flex-col">
