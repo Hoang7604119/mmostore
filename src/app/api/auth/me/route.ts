@@ -49,7 +49,9 @@ export async function GET(request: NextRequest) {
           isActive: user.isActive,
           credit: user.credit || 0,
           pendingCredit: user.pendingCredit || 0,
-          sellerRequest: user.sellerRequest
+          sellerRequest: user.sellerRequest,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
         }
       },
       { status: 200 }

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { UserData } from '@/types/user'
 import Header from '@/components/Header'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import Pagination from '@/components/ui/Pagination'
 import { 
   ArrowLeft,
   Clock,
@@ -90,6 +91,10 @@ export default function PendingCreditsPage() {
   })
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'released' | 'cancelled'>('all')
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [itemsPerPage] = useState(10)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -101,15 +106,23 @@ export default function PendingCreditsPage() {
 
   useEffect(() => {
     if (user) {
-      fetchPendingCredits()
+      setCurrentPage(1)
+      fetchPendingCredits(1)
     }
   }, [user, activeFilter])
 
-  const fetchPendingCredits = async () => {
+  useEffect(() => {
+    if (user) {
+      fetchPendingCredits(currentPage)
+    }
+  }, [user, currentPage])
+
+  const fetchPendingCredits = async (page: number = 1) => {
     try {
       setLoading(true)
       const params = new URLSearchParams({
-        limit: '50'
+        page: page.toString(),
+        limit: itemsPerPage.toString()
       })
       
       if (activeFilter !== 'all') {
@@ -128,6 +141,11 @@ export default function PendingCreditsPage() {
           released: { count: 0, amount: 0 },
           cancelled: { count: 0, amount: 0 }
         })
+        setTotalPages(data.data.totalPages || 1)
+        setTotalItems(data.data.totalItems || 0)
+        if (page === 1) {
+          setCurrentPage(1)
+        }
       } else {
         console.error('Failed to fetch pending credits:', response.status)
       }
@@ -358,6 +376,19 @@ export default function PendingCreditsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+              />
             </div>
           )}
         </div>

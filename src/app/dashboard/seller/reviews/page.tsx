@@ -214,54 +214,85 @@ export default function SellerReviewsPage() {
 
         {/* Summary Stats */}
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <MessageSquare className="h-8 w-8 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Tổng đánh giá</p>
-                  <p className="text-2xl font-semibold text-gray-900">{summary.totalReviews}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Star className="h-8 w-8 text-yellow-500" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Đánh giá trung bình</p>
-                  <p className="text-2xl font-semibold text-gray-900">{summary.averageRating}/5</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Reply className="h-8 w-8 text-green-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Đã phản hồi</p>
-                  <p className="text-2xl font-semibold text-gray-900">{summary.repliedCount}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-orange-600 font-semibold text-sm">{summary.replyRate}%</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Stats Cards */}
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <MessageSquare className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Tổng đánh giá</p>
+                    <p className="text-2xl font-semibold text-gray-900">{summary.totalReviews}</p>
                   </div>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Tỷ lệ phản hồi</p>
-                  <p className="text-2xl font-semibold text-gray-900">{summary.replyRate}%</p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <Star className="h-8 w-8 text-yellow-500" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Đánh giá trung bình</p>
+                    <p className="text-2xl font-semibold text-gray-900">{summary.averageRating}/5</p>
+                  </div>
                 </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <Reply className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Đã phản hồi</p>
+                    <p className="text-2xl font-semibold text-gray-900">{summary.repliedCount}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <span className="text-orange-600 font-semibold text-sm">{summary.replyRate}%</span>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Tỷ lệ phản hồi</p>
+                    <p className="text-2xl font-semibold text-gray-900">{summary.replyRate}%</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rating Distribution */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Phân bố đánh giá</h3>
+              <div className="space-y-3">
+                {summary.distribution.map((item) => {
+                  const percentage = summary.totalReviews > 0 ? Math.round((item.count / summary.totalReviews) * 100) : 0
+                  return (
+                    <div key={item.rating} className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-1 w-12">
+                        <span className="text-sm font-medium">{item.rating}</span>
+                        <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                      </div>
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-yellow-400 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex items-center space-x-2 w-16">
+                        <span className="text-sm text-gray-600">{item.count}</span>
+                        <span className="text-xs text-gray-500">({percentage}%)</span>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -361,9 +392,18 @@ export default function SellerReviewsPage() {
 
                 {/* Product Info */}
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <div className="flex items-center space-x-3">
-                    <Package className="h-5 w-5 text-gray-400" />
-                    <span className="font-medium text-gray-900">{review.product.title}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Package className="h-5 w-5 text-gray-400" />
+                      <span className="font-medium text-gray-900">{review.product.title}</span>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/products/${review.product._id}`)}
+                      className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Xem sản phẩm
+                    </button>
                   </div>
                 </div>
 

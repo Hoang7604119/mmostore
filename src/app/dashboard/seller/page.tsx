@@ -26,9 +26,24 @@ interface SellerStats {
   conversionRate: number
 }
 
+interface Product {
+  _id: string
+  title: string
+  description: string
+  pricePerUnit: number
+  category: string
+  status: 'pending' | 'approved' | 'rejected'
+  quantity: number
+  availableAccounts: number
+  soldCount: number
+  createdAt: string
+  images: string[]
+}
+
 export default function SellerDashboard() {
   const [user, setUser] = useState<User | null>(null)
   const [stats, setStats] = useState<SellerStats | null>(null)
+  const [recentProducts, setRecentProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -49,6 +64,13 @@ export default function SellerDashboard() {
           if (statsResponse.ok) {
             const statsData = await statsResponse.json()
             setStats(statsData.stats)
+          }
+          
+          // Fetch recent products
+          const productsResponse = await fetch('/api/seller/products?limit=5&sort=createdAt')
+          if (productsResponse.ok) {
+            const productsData = await productsResponse.json()
+            setRecentProducts(productsData.products || [])
           }
         } else {
           router.push('/auth/login')
@@ -247,17 +269,53 @@ export default function SellerDashboard() {
 
         {/* Recent Products */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Sản Phẩm Gần Đây
-          </h2>
-          <div className="text-center py-8">
-            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">Chưa có sản phẩm nào</p>
-            <p className="text-sm text-gray-400 mt-2">Bắt đầu bằng cách thêm sản phẩm đầu tiên của bạn</p>
-            <Link href="/dashboard/seller/products/create" className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block">
-              Thêm Sản Phẩm
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Sản Phẩm Gần Đây
+            </h2>
+            <Link href="/dashboard/seller/products" className="text-blue-600 hover:text-blue-800 text-sm">
+              Xem tất cả
             </Link>
           </div>
+          
+          {recentProducts.length > 0 ? (
+            <div className="space-y-4">
+              {recentProducts.map((product) => (
+                <div key={product._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <Package className="h-6 w-6 text-gray-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">{product.title}</h3>
+                      <p className="text-sm text-gray-500">
+                        {product.category} • {new Date(product.createdAt).toLocaleDateString('vi-VN')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900">
+                      {product.pricePerUnit.toLocaleString('vi-VN')}đ
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {product.status === 'pending' && 'Chờ duyệt'}
+                      {product.status === 'approved' && 'Đã duyệt'}
+                      {product.status === 'rejected' && 'Từ chối'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Chưa có sản phẩm nào</p>
+              <p className="text-sm text-gray-400 mt-2">Bắt đầu bằng cách thêm sản phẩm đầu tiên của bạn</p>
+              <Link href="/dashboard/seller/products/create" className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block">
+                Thêm Sản Phẩm
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Seller Privileges */}

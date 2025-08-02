@@ -144,7 +144,7 @@ export const notifyAccountUpgrade = async (userId: string, newRole: string, upgr
 }
 
 export const notifyPasswordChanged = async (userId: string, changeDate: string, ipAddress: string) => {
-  const dashboardUrl = await getDashboardUrl(userId, '/security')
+  const dashboardUrl = await getDashboardUrl(userId, '/profile')
   return await sendNotification(
     'ACCOUNT_APPROVED',
     userId,
@@ -286,7 +286,7 @@ export const markMessageNotificationsAsRead = async (userId: string, conversatio
 
 // Review and rating notifications
 export const notifyNewReview = async (userId: string, productName: string, rating: number, reviewerName: string, productId: string) => {
-  const dashboardUrl = await getDashboardUrl(userId, '/products')
+  const dashboardUrl = await getDashboardUrl(userId, '/reviews')
   const notificationData = {
     title: 'Đánh giá mới cho sản phẩm',
     message: `${reviewerName} đã đánh giá ${rating} sao cho sản phẩm "${productName}". Hãy xem và phản hồi!`,
@@ -449,23 +449,20 @@ export const notifyOrderCreated = async (userId: string, productName: string, qu
 }
 
 export const notifyProductSold = async (userId: string, productName: string, quantity: number, totalAmount: number, buyerName: string, productId: string) => {
-  const dashboardUrl = await getDashboardUrl(userId, '/orders')
-  const result = await sendNotification(
-    'ORDER_RECEIVED',
-    userId,
-    {
-      orderId: 'new',
-      amount: totalAmount.toLocaleString('vi-VN'),
-      productName,
-      quantity: quantity.toString(),
-      totalAmount: totalAmount.toLocaleString('vi-VN'),
-      buyerName,
-      saleDate: new Date().toLocaleDateString('vi-VN')
-    },
-    dashboardUrl
-  )
-  
-  return result
+  try {
+    const dashboardUrl = await getDashboardUrl(userId, '/orders')
+    await sendNotification(
+      'PRODUCT_SOLD',
+      userId,
+      {
+        productName,
+        amount: totalAmount.toLocaleString('vi-VN')
+      },
+      dashboardUrl
+    )
+  } catch (error) {
+    console.error('Error sending product sold notification:', error)
+  }
 }
 
 export const notifyCreditUpdated = async (userId: string, action: 'added' | 'subtracted', amount: number, newBalance: number, reason: string) => {
@@ -570,7 +567,7 @@ export const notifyAdminsNewSellerRequest = async (username: string, userEmail: 
 // Report-related notifications
 export const notifyReportCreated = async (adminUserId: string, reportTitle: string, reportType: string, reporterName: string, reportId: string) => {
   try {
-    const dashboardUrl = await getDashboardUrl(adminUserId, 'reports')
+    const dashboardUrl = await getDashboardUrl(adminUserId, '/reports')
     await sendNotification(
       'REPORT_CREATED',
       adminUserId,

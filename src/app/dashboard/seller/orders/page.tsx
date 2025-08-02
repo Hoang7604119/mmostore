@@ -398,10 +398,10 @@ export default function SellerOrdersPage() {
                         {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 flex items-center">
+                        <Link href={`/dashboard/seller/orders/${order._id}`} className="text-blue-600 hover:text-blue-900 flex items-center">
                           <Eye className="h-4 w-4 mr-1" />
                           Xem chi tiết
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   ))}

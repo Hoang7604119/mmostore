@@ -7,7 +7,7 @@ import { ShoppingCart, User, Package, Settings, LogOut, Store } from 'lucide-rea
 import { UserData } from '@/types/user'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import RealtimeTest from '@/components/RealtimeTest'
+
 
 interface UserWithCredit extends UserData {
   credit: number
@@ -143,20 +143,18 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Role-specific Dashboard */}
-          {user.role === 'buyer' && (
-            <Link href="/dashboard/buyer" className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow touch-manipulation">
-              <div className="flex items-center">
-                <div className="bg-blue-100 p-3 rounded-full">
-                  <Package className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Dashboard Buyer</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">Quản lý mua sắm</p>
-                </div>
+          {/* Dashboard Buyer - Available for all roles */}
+          <Link href="/dashboard/buyer" className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow touch-manipulation">
+            <div className="flex items-center">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <ShoppingCart className="h-6 w-6 text-blue-600" />
               </div>
-            </Link>
-          )}
+              <div className="ml-4">
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Dashboard Buyer</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Chế độ mua hàng</p>
+              </div>
+            </div>
+          </Link>
 
           {/* Products (for sellers) */}
           {['seller', 'manager', 'admin'].includes(user.role) && (
@@ -237,8 +235,7 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        {/* Supabase Realtime Test */}
-        <RealtimeTest />
+
       </div>
       
       <Footer />

@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     
     // Get reviews with pagination
     const reviews = await Review.find(filter)
-      .populate('buyerId', 'username')
+      .populate('userId', 'username')
       .populate('productId', 'title images')
       .sort({ createdAt: -1 })
       .skip(skip)

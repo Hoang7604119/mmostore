@@ -132,11 +132,6 @@ export default function Header({ user, onLogout }: HeaderProps) {
           name: 'Đơn hàng',
           href: '/dashboard/buyer/orders',
           icon: ShoppingCart
-        },
-        {
-          name: 'Đánh giá',
-          href: '/dashboard/buyer/reviews',
-          icon: Star
         }
       ],
       seller: [
@@ -154,11 +149,6 @@ export default function Header({ user, onLogout }: HeaderProps) {
           name: 'Đơn hàng',
           href: '/dashboard/buyer/orders',
           icon: ShoppingCart
-        },
-        {
-          name: 'Đánh giá',
-          href: '/dashboard/buyer/reviews',
-          icon: Star
         }
       ],
       buyer: [
@@ -176,11 +166,6 @@ export default function Header({ user, onLogout }: HeaderProps) {
           name: 'Yêu thích',
           href: '/dashboard/buyer/wishlist',
           icon: Heart
-        },
-        {
-          name: 'Đánh giá',
-          href: '/dashboard/buyer/reviews',
-          icon: Star
         }
       ]
     }

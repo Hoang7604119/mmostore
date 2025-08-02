@@ -93,40 +93,52 @@ ReviewSchema.index({ productId: 1, userId: 1 }, { unique: true })
 
 // Pre-save middleware to update product rating
 ReviewSchema.post('save', async function() {
-  const Product = mongoose.model('Product')
-  
-  // Calculate new average rating for the product
-  const reviews = await mongoose.model('Review').find({ 
-    productId: this.productId, 
-    isHidden: false 
-  })
-  
-  const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
-  const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0
-  
-  await Product.findByIdAndUpdate(this.productId, {
-    rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
-    reviewCount: reviews.length
-  })
-})
-
-// Pre-remove middleware to update product rating
-ReviewSchema.post('findOneAndDelete', async function(doc) {
-  if (doc) {
+  try {
     const Product = mongoose.model('Product')
     
+    // Calculate new average rating for the product
     const reviews = await mongoose.model('Review').find({ 
-      productId: doc.productId, 
+      productId: this.productId, 
       isHidden: false 
     })
     
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
     const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0
     
-    await Product.findByIdAndUpdate(doc.productId, {
-      rating: Math.round(averageRating * 10) / 10,
+    await Product.findByIdAndUpdate(this.productId, {
+      rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
       reviewCount: reviews.length
     })
+    
+    console.log(`Updated product ${this.productId} rating to ${Math.round(averageRating * 10) / 10} with ${reviews.length} reviews`)
+  } catch (error) {
+    console.error('Error updating product rating after review save:', error)
+  }
+})
+
+// Pre-remove middleware to update product rating
+ReviewSchema.post('findOneAndDelete', async function(doc) {
+  if (doc) {
+    try {
+      const Product = mongoose.model('Product')
+      
+      const reviews = await mongoose.model('Review').find({ 
+        productId: doc.productId, 
+        isHidden: false 
+      })
+      
+      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+      const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0
+      
+      await Product.findByIdAndUpdate(doc.productId, {
+        rating: Math.round(averageRating * 10) / 10,
+        reviewCount: reviews.length
+      })
+      
+      console.log(`Updated product ${doc.productId} rating to ${Math.round(averageRating * 10) / 10} with ${reviews.length} reviews after deletion`)
+    } catch (error) {
+      console.error('Error updating product rating after review deletion:', error)
+    }
   }
 })
 

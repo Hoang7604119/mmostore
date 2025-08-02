@@ -40,34 +40,52 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // TODO: Replace with actual database queries
-    // For now, return mock data
-    const stats = {
-      totalOrders: 15,
-      totalSpent: 2500000, // 2.5M VND
-      favoriteProducts: 8,
-      reviewsGiven: 12,
-      averageOrderValue: 166667, // totalSpent / totalOrders
-      loyaltyPoints: 250
-    }
+    // Import required models
+    const Order = (await import('@/models/Order')).default
+    const Review = (await import('@/models/Review')).default
 
-    // TODO: Implement actual queries like:
-    // const totalOrders = await prisma.order.count({
-    //   where: { buyerId: user.id }
-    // })
-    // 
-    // const totalSpentResult = await prisma.order.aggregate({
-    //   where: { buyerId: user.id, status: 'completed' },
-    //   _sum: { total: true }
-    // })
-    // 
-    // const favoriteProducts = await prisma.wishlist.count({
-    //   where: { userId: user.id }
-    // })
-    // 
-    // const reviewsGiven = await prisma.review.count({
-    //   where: { userId: user.id }
-    // })
+    // Get actual buyer statistics from database
+    const userId = decoded.userId
+
+    // Count total orders
+    const totalOrders = await Order.countDocuments({ buyerId: userId })
+
+    // Calculate total spent (only completed orders)
+    const totalSpentResult = await Order.aggregate([
+      {
+        $match: {
+          buyerId: new (await import('mongoose')).Types.ObjectId(userId),
+          status: 'completed'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalSpent: { $sum: '$totalAmount' }
+        }
+      }
+    ])
+    const totalSpent = totalSpentResult.length > 0 ? totalSpentResult[0].totalSpent : 0
+
+    // Count reviews given by this buyer
+    const reviewsGiven = await Review.countDocuments({ userId: userId })
+
+    // Calculate average order value
+    const averageOrderValue = totalOrders > 0 ? Math.round(totalSpent / totalOrders) : 0
+
+    // For now, set favoriteProducts and loyaltyPoints to 0 as requested
+    // These features will be implemented later
+    const favoriteProducts = 0
+    const loyaltyPoints = 0
+
+    const stats = {
+      totalOrders,
+      totalSpent,
+      favoriteProducts,
+      reviewsGiven,
+      averageOrderValue,
+      loyaltyPoints
+    }
 
     return NextResponse.json({
       success: true,

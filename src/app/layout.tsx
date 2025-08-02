@@ -4,6 +4,7 @@ import './globals.css'
 import ClientWrapper from '@/components/ClientWrapper'
 import { CONTACT_INFO } from '@/config/contact'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Analytics } from '@vercel/analytics/react'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -87,6 +88,7 @@ export default function RootLayout({
           </div>
         </ClientWrapper>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   )
