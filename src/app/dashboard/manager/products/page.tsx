@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ShoppingCart, Package, CheckCircle, XCircle, Eye, LogOut, ArrowLeft, Search, Filter, Trash2 } from 'lucide-react'
@@ -26,7 +26,21 @@ interface UserWithCredit extends UserData {
   credit: number
 }
 
-export default function ManagerProductsPage() {
+// Component để xử lý URL search params
+function StatusFilterHandler({ onStatusChange }: { onStatusChange: (status: string) => void }) {
+  const searchParams = useSearchParams()
+  
+  useEffect(() => {
+    const status = searchParams.get('status')
+    if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+      onStatusChange(status)
+    }
+  }, [searchParams, onStatusChange])
+  
+  return null
+}
+
+function ManagerProductsContent() {
   const [user, setUser] = useState<UserWithCredit | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,15 +48,12 @@ export default function ManagerProductsPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const router = useRouter()
-  const searchParams = useSearchParams()
+
+  const handleStatusChange = (status: string) => {
+    setStatusFilter(status)
+  }
 
   useEffect(() => {
-    // Check for status filter from URL params
-    const status = searchParams.get('status')
-    if (status && ['pending', 'approved', 'rejected'].includes(status)) {
-      setStatusFilter(status)
-    }
-
     const checkAuth = async () => {
     try {
       const response = await fetch('/api/auth/me')
@@ -66,7 +77,7 @@ export default function ManagerProductsPage() {
   }
 
     checkAuth()
-  }, [router, searchParams])
+  }, [router])
 
   const fetchProducts = async () => {
     try {
@@ -221,6 +232,9 @@ export default function ManagerProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Suspense fallback={null}>
+        <StatusFilterHandler onStatusChange={handleStatusChange} />
+      </Suspense>
       <Header user={user} onLogout={handleLogout} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -467,5 +481,17 @@ export default function ManagerProductsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ManagerProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+      </div>
+    }>
+      <ManagerProductsContent />
+    </Suspense>
   )
 }

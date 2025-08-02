@@ -219,7 +219,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="hidden lg:flex items-center space-x-3">
               <span className="text-sm font-medium bg-gradient-to-r from-gray-700 to-gray-600 bg-clip-text text-transparent">Xin chào, {user?.username || 'Guest'}</span>
-              <span className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm border sm:backdrop-blur-sm ${getRoleColor(user?.role || 'buyer')}`}>
+              <span className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm border ${getRoleColor(user?.role || 'buyer')}`}>
                     {getRoleDisplayName(user?.role || 'buyer')}
               </span>
             </div>
@@ -234,7 +234,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-white to-blue-50/50 text-gray-700 hover:text-gray-900 hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 shadow-sm border border-gray-200/50 backdrop-blur-sm hover:shadow-md hover:scale-105 touch-manipulation"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-white to-blue-50/50 text-gray-700 hover:text-gray-900 hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 shadow-sm border border-gray-200/50 sm:backdrop-blur-sm hover:shadow-md hover:scale-105 touch-manipulation"
                 title="Menu điều hướng"
               >
                 {isDropdownOpen ? (
@@ -247,7 +247,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
 
               {/* Dropdown Menu - Modern & Clean */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-3 w-72 sm:w-80 bg-gradient-to-br from-white via-blue-50/30 to-white sm:backdrop-blur-sm rounded-3xl shadow-2xl border border-blue-100/50 py-4 z-[70] animate-in slide-in-from-top-2 duration-300 max-h-[85vh] overflow-y-auto">
+                <div className="absolute right-0 mt-3 w-72 sm:w-80 bg-white sm:bg-gradient-to-br sm:from-white sm:via-blue-50/30 sm:to-white sm:backdrop-blur-sm rounded-3xl shadow-2xl border border-blue-100/50 py-4 z-[70] animate-in slide-in-from-top-2 duration-300 max-h-[85vh] overflow-y-auto">
                   {/* Mobile User Info - Only visible on mobile */}
                   <div className="sm:hidden px-4 py-3 border-b border-gradient-to-r from-transparent via-blue-100/50 to-transparent">
                     <div className="flex items-center space-x-3">
@@ -256,7 +256,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-gray-900 truncate">{user?.username || 'Guest'}</div>
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold shadow-sm border sm:backdrop-blur-sm ${getRoleColor(user?.role || 'buyer')}`}>
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold shadow-sm border ${getRoleColor(user?.role || 'buyer')}`}>
                           {getRoleDisplayName(user?.role || 'buyer')}
                         </span>
                       </div>

@@ -576,7 +576,7 @@ export default function AdminReportsPage() {
                         {selectedReport.productId ? new Intl.NumberFormat('vi-VN', {
                           style: 'currency',
                           currency: 'VND'
-                        }).format(selectedReport.productId?.pricePerUnit || 0) : 'N/A'}
+                        }).format(selectedReport.productId.pricePerUnit) : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -701,14 +701,14 @@ export default function AdminReportsPage() {
                       value={resolveData.refundAmount}
                       onChange={(e) => setResolveData({...resolveData, refundAmount: parseInt(e.target.value) || 0})}
                       min="0"
-                      max={selectedReport.productId?.pricePerUnit || 0}
+                      max={selectedReport.productId ? selectedReport.productId.pricePerUnit : 0}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Tối đa: {new Intl.NumberFormat('vi-VN', {
                         style: 'currency',
                         currency: 'VND'
-                      }).format(selectedReport.productId?.pricePerUnit || 0)}
+                      }).format(selectedReport.productId ? selectedReport.productId.pricePerUnit : 0)}
                     </p>
                   </div>
                   

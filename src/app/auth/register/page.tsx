@@ -1,15 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ShoppingCart, Eye, EyeOff, Loader2, RefreshCw } from 'lucide-react'
 import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator'
 import { validatePassword } from '@/lib/passwordValidation'
 
-export default function RegisterPage() {
-  const router = useRouter()
+// Component to handle search params
+function SearchParamsHandler({ onAutoComplete }: { onAutoComplete: (verified: string | null) => void }) {
   const searchParams = useSearchParams()
+  
+  useEffect(() => {
+    const verified = searchParams.get('verified')
+    onAutoComplete(verified)
+  }, [searchParams, onAutoComplete])
+  
+  return null
+}
+
+function RegisterContent() {
+  const router = useRouter()
   const [step, setStep] = useState<'register'>('register')
   const [formData, setFormData] = useState({
     username: '',
@@ -109,9 +120,8 @@ export default function RegisterPage() {
     }
   }
 
-  // Check if returning from verification page
-  useEffect(() => {
-    const verified = searchParams.get('verified')
+  // Handle auto complete registration
+  const handleVerificationCheck = (verified: string | null) => {
     const storedEmail = sessionStorage.getItem('verifiedEmail')
     const storedCode = sessionStorage.getItem('verificationCode')
     const storedUsername = sessionStorage.getItem('registrationUsername')
@@ -127,7 +137,7 @@ export default function RegisterPage() {
       sessionStorage.removeItem('registrationUsername')
       sessionStorage.removeItem('registrationPassword')
     }
-  }, [searchParams])
+  }
 
   // Send verification email
   const handleSendVerification = async (e: React.FormEvent) => {
@@ -202,6 +212,10 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Suspense fallback={null}>
+        <SearchParamsHandler onAutoComplete={handleVerificationCheck} />
+      </Suspense>
+      
       {/* Header */}
       <header className="bg-gradient-to-r from-white via-blue-50/30 to-white shadow-xl border-b border-blue-100/50 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -402,5 +416,20 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Đang tải...</p>
+        </div>
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   )
 }
