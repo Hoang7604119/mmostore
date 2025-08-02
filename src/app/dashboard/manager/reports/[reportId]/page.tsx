@@ -49,10 +49,10 @@ interface Report {
 }
 
 const REPORT_TYPE_LABELS = {
-  fake_account: 'Tài khoản giả mạo',
+  account_invalid: 'Tài khoản không hợp lệ',
+  account_banned: 'Tài khoản bị khóa',
   wrong_info: 'Thông tin sai',
-  not_working: 'Tài khoản không hoạt động',
-  scam: 'Lừa đảo',
+  fraud: 'Lừa đảo',
   other: 'Khác'
 }
 

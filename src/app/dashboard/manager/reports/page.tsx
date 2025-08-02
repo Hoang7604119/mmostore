@@ -48,12 +48,12 @@ interface Report {
 }
 
 const REPORT_TYPE_LABELS = {
-  fake_account: 'Tài khoản giả mạo',
-  wrong_info: 'Thông tin sai',
-  not_working: 'Tài khoản không hoạt động',
-  scam: 'Lừa đảo',
-  other: 'Khác'
-}
+    account_invalid: 'Tài khoản không hợp lệ',
+    account_banned: 'Tài khoản bị khóa',
+    wrong_info: 'Thông tin sai',
+    fraud: 'Lừa đảo',
+    other: 'Khác'
+  }
 
 const STATUS_LABELS = {
   pending: 'Chờ xử lý',
@@ -323,10 +323,10 @@ export default function ManagerReportsPage() {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">Tất cả loại</option>
-                  <option value="fake_account">Tài khoản giả mạo</option>
-                  <option value="wrong_info">Thông tin sai</option>
-                  <option value="not_working">Tài khoản không hoạt động</option>
-                  <option value="scam">Lừa đảo</option>
+                  <option value="account_invalid">Tài khoản không hợp lệ</option>
+                <option value="account_banned">Tài khoản bị khóa</option>
+                <option value="wrong_info">Thông tin sai</option>
+                <option value="fraud">Lừa đảo</option>
                   <option value="other">Khác</option>
                 </select>
               </div>

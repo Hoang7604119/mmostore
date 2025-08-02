@@ -25,19 +25,7 @@ const ProductSchema = new Schema<IProduct>({
   type: {
     type: String,
     required: true,
-    index: true,
-    validate: {
-      validator: async function(value: string) {
-        // Check if the type exists in ProductType collection and is active
-        const ProductType = mongoose.models.ProductType || mongoose.model('ProductType', new Schema({}))
-        const productType = await ProductType.findOne({ 
-          name: value.toLowerCase(), 
-          isActive: true 
-        })
-        return !!productType
-      },
-      message: (props: any) => `\`${props.value}\` is not a valid product type. Please add it in admin dashboard first.`
-    }
+    index: true
   },
   title: {
     type: String,

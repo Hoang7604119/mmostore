@@ -42,12 +42,12 @@ interface Report {
 }
 
 const REPORT_TYPE_LABELS = {
-  fake_account: 'Tài khoản giả mạo',
-  wrong_info: 'Thông tin sai',
-  not_working: 'Tài khoản không hoạt động',
-  scam: 'Lừa đảo',
-  other: 'Khác'
-}
+    account_invalid: 'Tài khoản không hợp lệ',
+    account_banned: 'Tài khoản bị khóa',
+    wrong_info: 'Thông tin sai',
+    fraud: 'Lừa đảo',
+    other: 'Khác'
+  }
 
 const STATUS_LABELS = {
   pending: 'Chờ xử lý',

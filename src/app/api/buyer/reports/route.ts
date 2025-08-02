@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate report type
-    const validReportTypes = ['fake_account', 'wrong_info', 'not_working', 'scam', 'other']
+    const validReportTypes = ['account_invalid', 'account_banned', 'wrong_info', 'fraud', 'other']
     if (!validReportTypes.includes(reportType)) {
       return NextResponse.json(
         { error: 'Loại báo cáo không hợp lệ' },

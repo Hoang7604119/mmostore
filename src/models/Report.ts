@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose'
 
 export type ReportStatus = 'pending' | 'investigating' | 'resolved' | 'rejected'
-export type ReportType = 'fake_account' | 'wrong_info' | 'not_working' | 'scam' | 'other'
+export type ReportType = 'account_invalid' | 'account_banned' | 'wrong_info' | 'fraud' | 'other'
 
 export interface IReport extends Document {
   _id: string
@@ -56,7 +56,7 @@ const ReportSchema = new Schema<IReport>({
   },
   reportType: {
     type: String,
-    enum: ['fake_account', 'wrong_info', 'not_working', 'scam', 'other'],
+    enum: ['account_invalid', 'account_banned', 'wrong_info', 'fraud', 'other'],
     required: true
   },
   title: {

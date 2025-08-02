@@ -95,7 +95,7 @@ export default function BuyerOrdersPage() {
   const [showDownloadModal, setShowDownloadModal] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [reportData, setReportData] = useState({
-    reportType: 'fake_account',
+    reportType: 'account_invalid',
     title: '',
     description: '',
     evidence: ''
@@ -212,7 +212,7 @@ export default function BuyerOrdersPage() {
         alert('Báo cáo đã được gửi thành công!')
         setShowReportModal(false)
         setReportData({
-          reportType: 'fake_account',
+          reportType: 'account_invalid',
           title: '',
           description: '',
           evidence: ''
@@ -837,10 +837,10 @@ export default function BuyerOrdersPage() {
                   onChange={(e) => setReportData({...reportData, reportType: e.target.value})}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
-                  <option value="fake_account">Tài khoản giả mạo</option>
-                  <option value="wrong_info">Thông tin sai</option>
-                  <option value="not_working">Tài khoản không hoạt động</option>
-                  <option value="scam">Lừa đảo</option>
+                  <option value="account_invalid">Tài khoản không hợp lệ</option>
+                    <option value="account_banned">Tài khoản bị khóa</option>
+                    <option value="wrong_info">Thông tin sai</option>
+                    <option value="fraud">Lừa đảo</option>
                   <option value="other">Khác</option>
                 </select>
               </div>

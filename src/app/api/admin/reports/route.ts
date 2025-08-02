@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
-import Report from '@/models/Report'
-import User from '@/models/User'
-import Product from '@/models/Product'
-import AccountItem from '@/models/AccountItem'
 import { verifyToken } from '@/lib/utils'
 import mongoose from 'mongoose'
 import { notifyReportResolved, notifyRefundProcessed } from '@/utils/notificationHelpers'
+
+// Import models
+import User from '@/models/User'
+import ProductType from '@/models/ProductType'
+import Product from '@/models/Product'
+import AccountItem from '@/models/AccountItem'
+import Report from '@/models/Report'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +17,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
+    
     
     // Verify admin/manager token
     const token = request.cookies.get('token')?.value
@@ -56,16 +60,34 @@ export async function GET(request: NextRequest) {
       query.reportType = reportType
     }
 
-    // Get reports with pagination
+    // Get reports with pagination - using lean() to avoid populate issues
     const reports = await Report.find(query)
-      .populate('reporterId', 'username email')
-      .populate('productId', 'title type category pricePerUnit')
-      .populate('sellerId', 'username email')
-      .populate('accountItemId', 'username email accountData')
-      .populate('resolvedBy', 'username')
+      .lean()
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit)
+      .limit(limit) as any[]
+
+    // Manually populate required fields
+    const populatedReports = await Promise.all(
+      reports.map(async (report) => {
+        const [reporter, seller, product, accountItem, resolvedBy] = await Promise.all([
+          report.reporterId ? User.findById(report.reporterId).select('username email').lean() : null,
+          report.sellerId ? User.findById(report.sellerId).select('username email').lean() : null,
+          report.productId ? Product.findById(report.productId).select('title type category pricePerUnit').lean() : null,
+          report.accountItemId ? AccountItem.findById(report.accountItemId).select('username email accountData').lean() : null,
+          report.resolvedBy ? User.findById(report.resolvedBy).select('username').lean() : null
+        ])
+
+        return {
+          ...report,
+          reporterId: reporter,
+          sellerId: seller,
+          productId: product,
+          accountItemId: accountItem,
+          resolvedBy: resolvedBy
+        }
+      })
+    )
 
     const total = await Report.countDocuments(query)
 
@@ -91,7 +113,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      reports,
+      reports: populatedReports,
       pagination: {
         page,
         limit,
@@ -114,6 +136,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     await connectDB()
+    
     
     // Verify admin/manager token
     const token = request.cookies.get('token')?.value
@@ -167,12 +190,8 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Find report
-    const report = await Report.findById(reportId)
-      .populate('reporterId', 'username email credit')
-      .populate('sellerId', 'username email credit')
-      .populate('productId', 'title pricePerUnit')
-      .populate('accountItemId')
+    // Find report - using lean() to avoid populate issues
+    const report = await Report.findById(reportId).lean() as any
 
     if (!report) {
       return NextResponse.json(
@@ -200,14 +219,14 @@ export async function PUT(request: NextRequest) {
           if (processRefund && refundAmount && refundAmount > 0) {
             // Refund to buyer
             await User.findByIdAndUpdate(
-              report.reporterId._id,
+              report.reporterId,
               { $inc: { credit: refundAmount } },
               { session }
             )
 
             // Deduct from seller
             await User.findByIdAndUpdate(
-              report.sellerId._id,
+              report.sellerId,
               { $inc: { credit: -refundAmount } },
               { session }
             )
@@ -223,7 +242,7 @@ export async function PUT(request: NextRequest) {
             // Apply credit deduction penalty
             if (sellerPenalty.type === 'credit_deduction' && sellerPenalty.amount) {
               await User.findByIdAndUpdate(
-                report.sellerId._id,
+                report.sellerId,
                 { $inc: { credit: -sellerPenalty.amount } },
                 { session }
               )
@@ -236,7 +255,7 @@ export async function PUT(request: NextRequest) {
                 : new Date(Date.now() + (sellerPenalty.duration || 7) * 24 * 60 * 60 * 1000)
               
               await User.findByIdAndUpdate(
-                report.sellerId._id,
+                report.sellerId,
                 { 
                   isActive: sellerPenalty.type !== 'permanent_ban',
                   banUntil: banUntil
@@ -260,18 +279,30 @@ export async function PUT(request: NextRequest) {
       await session.endSession()
     }
 
-    // Get updated report
-    const updatedReport = await Report.findById(reportId)
-      .populate('reporterId', 'username email')
-      .populate('sellerId', 'username email')
-      .populate('productId', 'title type')
-      .populate('resolvedBy', 'username')
+    // Get updated report - using lean() to avoid populate issues
+    const updatedReportRaw = await Report.findById(reportId).lean() as any
+    
+    // Manually populate required fields for updated report
+    const [reporter, seller, product, resolvedBy] = await Promise.all([
+      updatedReportRaw.reporterId ? User.findById(updatedReportRaw.reporterId).select('username email').lean() : null,
+      updatedReportRaw.sellerId ? User.findById(updatedReportRaw.sellerId).select('username email').lean() : null,
+      updatedReportRaw.productId ? Product.findById(updatedReportRaw.productId).select('title type').lean() : null,
+      updatedReportRaw.resolvedBy ? User.findById(updatedReportRaw.resolvedBy).select('username').lean() : null
+    ])
+    
+    const updatedReport = {
+      ...updatedReportRaw,
+      reporterId: reporter,
+      sellerId: seller,
+      productId: product,
+      resolvedBy: resolvedBy
+    }
 
     // Send notifications
     try {
       // Notify reporter about resolution
       await notifyReportResolved(
-        report.reporterId._id.toString(),
+        report.reporterId.toString(),
         updatedReport.title,
         status,
         adminNote || '',
@@ -281,7 +312,7 @@ export async function PUT(request: NextRequest) {
       // Notify about refund if processed
       if (processRefund && refundAmount && refundAmount > 0) {
         await notifyRefundProcessed(
-          report.reporterId._id.toString(),
+          report.reporterId.toString(),
           refundAmount,
           updatedReport.title,
           updatedReport._id.toString()
