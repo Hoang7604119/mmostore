@@ -354,38 +354,7 @@ export default function AdminProfilePage() {
               </div>
             </Link>
 
-            <Link
-              href="/dashboard/admin/orders"
-              className="flex items-center p-4 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
-            >
-              <ShoppingCart className="h-6 w-6 text-purple-600 mr-3" />
-              <div>
-                <p className="font-medium text-purple-800">Quản lý đơn hàng</p>
-                <p className="text-sm text-purple-600">Theo dõi giao dịch</p>
-              </div>
-            </Link>
 
-            <Link
-              href="/dashboard/admin/analytics"
-              className="flex items-center p-4 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
-            >
-              <BarChart3 className="h-6 w-6 text-orange-600 mr-3" />
-              <div>
-                <p className="font-medium text-orange-800">Báo cáo</p>
-                <p className="text-sm text-orange-600">Thống kê chi tiết</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/admin/seller-requests"
-              className="flex items-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors"
-            >
-              <UserCheck className="h-6 w-6 text-yellow-600 mr-3" />
-              <div>
-                <p className="font-medium text-yellow-800">Yêu cầu người bán</p>
-                <p className="text-sm text-yellow-600">Duyệt đăng ký</p>
-              </div>
-            </Link>
 
             <Link
               href="/dashboard/admin/reports"
@@ -398,27 +367,7 @@ export default function AdminProfilePage() {
               </div>
             </Link>
 
-            <Link
-              href="/dashboard/admin/settings"
-              className="flex items-center p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <Settings className="h-6 w-6 text-gray-600 mr-3" />
-              <div>
-                <p className="font-medium text-gray-800">Cài đặt hệ thống</p>
-                <p className="text-sm text-gray-600">Cấu hình chung</p>
-              </div>
-            </Link>
 
-            <Link
-              href="/dashboard/credit"
-              className="flex items-center p-4 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
-            >
-              <CreditCard className="h-6 w-6 text-indigo-600 mr-3" />
-              <div>
-                <p className="font-medium text-indigo-800">Quản lý Credit</p>
-                <p className="text-sm text-indigo-600">Nạp tiền hệ thống</p>
-              </div>
-            </Link>
           </div>
         </div>
       </div>

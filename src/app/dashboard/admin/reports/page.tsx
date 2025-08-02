@@ -12,25 +12,25 @@ interface Report {
     _id: string
     username: string
     email: string
-  }
+  } | null
   productId: {
     _id: string
     title: string
     type: string
     category: string
     pricePerUnit: number
-  }
+  } | null
   accountItemId: {
     _id: string
     username: string
     password: string
     email?: string
-  }
+  } | null
   sellerId: {
     _id: string
     username: string
     email: string
-  }
+  } | null
   reportType: string
   title: string
   description: string
@@ -408,20 +408,32 @@ export default function AdminReportsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{report.productId.title}</div>
-                        <div className="text-sm text-gray-500">{report.productId.type} - {report.productId.category}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {report.productId ? report.productId.title : 'Sản phẩm đã bị xóa'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {report.productId ? `${report.productId.type} - ${report.productId.category}` : 'N/A'}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{report.reporterId.username}</div>
-                        <div className="text-sm text-gray-500">{report.reporterId.email}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {report.reporterId ? report.reporterId.username : 'Người dùng đã bị xóa'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {report.reporterId ? report.reporterId.email : 'N/A'}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{report.sellerId.username}</div>
-                        <div className="text-sm text-gray-500">{report.sellerId.email}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {report.sellerId ? report.sellerId.username : 'Người bán đã bị xóa'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {report.sellerId ? report.sellerId.email : 'N/A'}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -445,7 +457,7 @@ export default function AdminReportsPage() {
                             setResolveData({
                               status: 'resolved',
                               adminNote: '',
-                              refundAmount: report.productId.pricePerUnit,
+                              refundAmount: report.productId ? report.productId.pricePerUnit : 0,
                               sellerPenalty: {
                                 type: 'warning',
                                 amount: 0,
@@ -554,15 +566,17 @@ export default function AdminReportsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Tên sản phẩm</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedReport.productId.title}</p>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {selectedReport.productId ? selectedReport.productId.title : 'Sản phẩm đã bị xóa'}
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Giá</label>
                       <p className="mt-1 text-sm text-gray-900">
-                        {new Intl.NumberFormat('vi-VN', {
+                        {selectedReport.productId ? new Intl.NumberFormat('vi-VN', {
                           style: 'currency',
                           currency: 'VND'
-                        }).format(selectedReport.productId.pricePerUnit)}
+                        }).format(selectedReport.productId?.pricePerUnit || 0) : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -570,27 +584,33 @@ export default function AdminReportsPage() {
                 
                 <div className="border-t pt-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">Thông tin tài khoản được báo cáo</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  {selectedReport.accountItemId ? (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Username</label>
-                      <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">
-                        {selectedReport.accountItemId.username}
-                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Username</label>
+                          <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">
+                            {selectedReport.accountItemId.username}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Password</label>
+                          <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">
+                            {selectedReport.accountItemId.password}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedReport.accountItemId.email && (
+                        <div className="mt-2">
+                          <label className="block text-sm font-medium text-gray-700">Email</label>
+                          <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">
+                            {selectedReport.accountItemId.email}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Password</label>
-                      <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">
-                        {selectedReport.accountItemId.password}
-                      </p>
-                    </div>
-                  </div>
-                  {selectedReport.accountItemId.email && (
-                    <div className="mt-2">
-                      <label className="block text-sm font-medium text-gray-700">Email</label>
-                      <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">
-                        {selectedReport.accountItemId.email}
-                      </p>
-                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">Thông tin tài khoản không khả dụng</p>
                   )}
                 </div>
                 
@@ -681,14 +701,14 @@ export default function AdminReportsPage() {
                       value={resolveData.refundAmount}
                       onChange={(e) => setResolveData({...resolveData, refundAmount: parseInt(e.target.value) || 0})}
                       min="0"
-                      max={selectedReport.productId.pricePerUnit}
+                      max={selectedReport.productId?.pricePerUnit || 0}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Tối đa: {new Intl.NumberFormat('vi-VN', {
                         style: 'currency',
                         currency: 'VND'
-                      }).format(selectedReport.productId.pricePerUnit)}
+                      }).format(selectedReport.productId?.pricePerUnit || 0)}
                     </p>
                   </div>
                   

@@ -50,9 +50,32 @@ const nextConfig = {
     ]
   },
   
+  // Performance optimizations
+  swcMinify: true,
+  
   // Experimental features for better performance
   experimental: {
     // optimizeCss: true // Disabled due to critters module issue
+    optimizePackageImports: ['lucide-react'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
+  
+  // Bundle analyzer
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+    return config;
   },
 }
 

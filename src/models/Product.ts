@@ -1,5 +1,4 @@
 import mongoose, { Document, Schema } from 'mongoose'
-import ProductType from './ProductType'
 
 export type ProductTypeString = string
 export type ProductStatus = 'pending' | 'approved' | 'sold_out' | 'rejected'
@@ -30,6 +29,7 @@ const ProductSchema = new Schema<IProduct>({
     validate: {
       validator: async function(value: string) {
         // Check if the type exists in ProductType collection and is active
+        const ProductType = mongoose.models.ProductType || mongoose.model('ProductType', new Schema({}))
         const productType = await ProductType.findOne({ 
           name: value.toLowerCase(), 
           isActive: true 

@@ -314,12 +314,12 @@ export default function ManagerProfilePage() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
-              href="/dashboard/manager/sellers"
+              href="/dashboard/manager/users"
               className="flex items-center p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
             >
-              <Store className="h-6 w-6 text-blue-600 mr-3" />
+              <Users className="h-6 w-6 text-blue-600 mr-3" />
               <div>
-                <p className="font-medium text-blue-800">Quản lý người bán</p>
+                <p className="font-medium text-blue-800">Quản lý người dùng</p>
                 <p className="text-sm text-blue-600">Xem và hỗ trợ</p>
               </div>
             </Link>
@@ -336,70 +336,17 @@ export default function ManagerProfilePage() {
             </Link>
 
             <Link
-              href="/dashboard/manager/orders"
+              href="/dashboard/manager/reports"
               className="flex items-center p-4 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
             >
-              <ShoppingCart className="h-6 w-6 text-purple-600 mr-3" />
+              <BarChart3 className="h-6 w-6 text-purple-600 mr-3" />
               <div>
-                <p className="font-medium text-purple-800">Theo dõi đơn hàng</p>
-                <p className="text-sm text-purple-600">Giám sát giao dịch</p>
+                <p className="font-medium text-purple-800">Báo cáo</p>
+                <p className="text-sm text-purple-600">Xem báo cáo</p>
               </div>
             </Link>
 
-            <Link
-              href="/dashboard/manager/analytics"
-              className="flex items-center p-4 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
-            >
-              <BarChart3 className="h-6 w-6 text-orange-600 mr-3" />
-              <div>
-                <p className="font-medium text-orange-800">Báo cáo</p>
-                <p className="text-sm text-orange-600">Thống kê khu vực</p>
-              </div>
-            </Link>
 
-            <Link
-              href="/dashboard/manager/seller-requests"
-              className="flex items-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors"
-            >
-              <UserCheck className="h-6 w-6 text-yellow-600 mr-3" />
-              <div>
-                <p className="font-medium text-yellow-800">Yêu cầu người bán</p>
-                <p className="text-sm text-yellow-600">Xem xét đăng ký</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/manager/support"
-              className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-            >
-              <AlertTriangle className="h-6 w-6 text-red-600 mr-3" />
-              <div>
-                <p className="font-medium text-red-800">Hỗ trợ</p>
-                <p className="text-sm text-red-600">Giải quyết vấn đề</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/manager/users"
-              className="flex items-center p-4 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
-            >
-              <Users className="h-6 w-6 text-indigo-600 mr-3" />
-              <div>
-                <p className="font-medium text-indigo-800">Người dùng</p>
-                <p className="text-sm text-indigo-600">Quản lý tài khoản</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/credit"
-              className="flex items-center p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <CreditCard className="h-6 w-6 text-gray-600 mr-3" />
-              <div>
-                <p className="font-medium text-gray-800">Quản lý Credit</p>
-                <p className="text-sm text-gray-600">Nạp tiền tài khoản</p>
-              </div>
-            </Link>
           </div>
         </div>
       </div>

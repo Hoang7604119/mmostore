@@ -10,9 +10,27 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  title: CONTACT_INFO.COMPANY_NAME,
+  title: {
+    default: CONTACT_INFO.COMPANY_NAME,
+    template: `%s - ${CONTACT_INFO.COMPANY_NAME}`
+  },
   description: CONTACT_INFO.COMPANY_DESCRIPTION,
+  keywords: ['MMO Store', 'marketplace', 'mua bán online', 'game items', 'digital marketplace'],
+  authors: [{ name: CONTACT_INFO.COMPANY_NAME }],
+  creator: CONTACT_INFO.COMPANY_NAME,
+  publisher: CONTACT_INFO.COMPANY_NAME,
   manifest: '/manifest.json',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
@@ -69,8 +87,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: '#2563eb'
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#2563eb' },
+    { media: '(prefers-color-scheme: dark)', color: '#1d4ed8' }
+  ],
+  colorScheme: 'light'
 }
 
 export default function RootLayout({
