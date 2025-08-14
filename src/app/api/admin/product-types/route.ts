@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import connectDB from '@/lib/mongodb'
 import ProductType from '@/models/ProductType'
 import { verifyToken } from '@/lib/utils'
@@ -104,8 +105,14 @@ export async function POST(request: NextRequest) {
       order: order || 0
     })
 
+    // Revalidate các trang sử dụng product types
+    revalidatePath('/marketplace')
+    revalidatePath('/api/product-types-with-images')
+    revalidatePath('/api/product-types')
+    revalidatePath('/api/buyer/product-counts')
+
     return NextResponse.json(
-      { 
+      {
         message: 'Tạo loại sản phẩm thành công',
         productType: newProductType
       },
@@ -215,6 +222,12 @@ export async function PUT(request: NextRequest) {
       { new: true }
     )
 
+    // Revalidate các trang sử dụng product types
+    revalidatePath('/marketplace')
+    revalidatePath('/api/product-types-with-images')
+    revalidatePath('/api/product-types')
+    revalidatePath('/api/buyer/product-counts')
+
     return NextResponse.json(
       { 
         message: 'Cập nhật loại sản phẩm thành công',
@@ -284,6 +297,12 @@ export async function DELETE(request: NextRequest) {
     // }
 
     await ProductType.findByIdAndDelete(id)
+
+    // Revalidate các trang sử dụng product types
+    revalidatePath('/marketplace')
+    revalidatePath('/api/product-types-with-images')
+    revalidatePath('/api/product-types')
+    revalidatePath('/api/buyer/product-counts')
 
     return NextResponse.json(
       { message: 'Xóa loại sản phẩm thành công' },

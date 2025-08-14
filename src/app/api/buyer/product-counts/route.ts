@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 
+// Force dynamic rendering to prevent caching
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB()

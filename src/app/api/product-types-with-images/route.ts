@@ -3,6 +3,9 @@ import connectDB from '@/lib/mongodb'
 import ProductType from '@/models/ProductType'
 import { getImageUrl } from '@/lib/imageUtils'
 
+// Force dynamic rendering to prevent caching
+export const dynamic = 'force-dynamic'
+
 // GET - Lấy danh sách product types với base64 images
 export async function GET(request: NextRequest) {
   try {
