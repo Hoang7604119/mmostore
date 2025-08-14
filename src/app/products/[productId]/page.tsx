@@ -8,6 +8,7 @@ import ProductReviews from '@/components/ProductReviews'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { APP_CONFIG } from '@/config/app'
+import { getImageUrl } from '@/lib/imageUtils'
 
 interface Product {
   _id: string
@@ -209,13 +210,14 @@ export default function ProductDetailPage() {
   }
 
   const getDefaultImage = (productType: string) => {
-    // First try to get image from ProductType database
+    // First try to get image from ProductType database using unified logic
     const productTypeData = productTypes.find(pt => pt.name === productType)
-    if (productTypeData?.imageBase64) {
-      return productTypeData.imageBase64
-    }
-    if (productTypeData?.image) {
-      return productTypeData.image
+    if (productTypeData) {
+      // Use the unified image URL logic from imageUtils
+      const imageUrl = getImageUrl(productTypeData)
+      if (imageUrl && !imageUrl.includes('/uploads/other.svg')) {
+        return imageUrl
+      }
     }
     
     // Fallback to APP_CONFIG if not found in database
