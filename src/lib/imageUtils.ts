@@ -34,8 +34,9 @@ export function getImageUrl(source?: ImageSource, defaultImage?: string): string
     if (source.image.startsWith('http')) {
       return source.image
     }
-    // Convert relative path to API endpoint
-    return `/api/images?path=${encodeURIComponent(source.image)}`
+    // Convert relative path to API endpoint (remove leading slash if present)
+    const cleanPath = source.image.startsWith('/') ? source.image.slice(1) : source.image
+    return `/api/images/${cleanPath}`
   }
 
   // 4. Default image
