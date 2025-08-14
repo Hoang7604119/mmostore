@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 import AccountItem from '@/models/AccountItem'
+import { getImageUrl } from '@/lib/imageUtils'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,6 +81,16 @@ export async function GET(request: NextRequest) {
           product.status = 'sold_out'
         }
         
+        // Process images with proper URL handling
+        const processedImages = (product.images || []).map((imagePath: string) => {
+          // If it's already a full URL, return as-is
+          if (imagePath.startsWith('http')) {
+            return imagePath
+          }
+          // Convert legacy path to proper URL using imageUtils
+          return getImageUrl({ image: imagePath })
+        })
+
         return {
           _id: product._id,
           title: product.title,
@@ -102,7 +113,7 @@ export async function GET(request: NextRequest) {
             rating: product.sellerId?.rating || 5.0
           },
           createdAt: product.createdAt,
-          images: product.images || []
+          images: processedImages
         }
       })
     )

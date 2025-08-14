@@ -34,9 +34,13 @@ export function getImageUrl(source?: ImageSource, defaultImage?: string): string
     if (source.image.startsWith('http')) {
       return source.image
     }
-    // Convert relative path to API endpoint (remove leading slash if present)
-    const cleanPath = source.image.startsWith('/') ? source.image.slice(1) : source.image
-    return `/api/images/${cleanPath}`
+    // Convert relative path to API endpoint
+    // Remove leading slash and 'uploads/' prefix if present since API route adds it
+    let cleanPath = source.image.startsWith('/') ? source.image.slice(1) : source.image
+    if (cleanPath.startsWith('uploads/')) {
+      cleanPath = cleanPath.slice(8) // Remove 'uploads/' prefix
+    }
+    return `/api/images/uploads/${cleanPath}`
   }
 
   // 4. Default image
@@ -139,7 +143,7 @@ export function getFallbackDisplay(source?: ImageSource & { displayName?: string
 }
 
 /**
- * Migrate legacy image to Supabase Storage
+ * Migrate legacy image to Vercel Blob Storage
  * This function can be used for gradual migration
  */
 export async function migrateLegacyImage(

@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, displayName, color, image, imageUrl, description, order } = await request.json()
+    const { name, displayName, color, image, blobUrl, description, order } = await request.json()
 
     // Validation
     if (!name || !displayName || !color) {
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       icon: displayName.charAt(0).toUpperCase(), // Auto-generate icon from first letter
       color,
       image,
-      imageUrl,
+      blobUrl,
       description,
       order: order || 0
     })
@@ -143,7 +143,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const { id, name, displayName, color, image, imageUrl, description, order, isActive } = await request.json()
+    const { id, name, displayName, color, image, blobUrl, description, order, isActive } = await request.json()
 
     // Validation
     if (!id) {
@@ -162,8 +162,8 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Clean up Supabase image when deleting
-    await cleanupOldImage(productType.imageUrl)
+    // Clean up old image when deleting
+    await cleanupOldImage(productType.blobUrl)
 
     // Check if new name already exists (excluding current record)
     if (name && name.toLowerCase() !== productType.name) {
@@ -190,9 +190,9 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Clean up old image if updating to new Supabase image
-    if (imageUrl !== undefined && imageUrl !== productType.imageUrl) {
-      await cleanupOldImage(productType.imageUrl)
+    // Clean up old image if updating to new Vercel Blob image
+    if (blobUrl !== undefined && blobUrl !== productType.blobUrl) {
+      await cleanupOldImage(productType.blobUrl)
     }
 
     // Update product type
@@ -204,7 +204,7 @@ export async function PUT(request: NextRequest) {
     }
     if (color !== undefined) updateData.color = color
     if (image !== undefined) updateData.image = image
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl
+    if (blobUrl !== undefined) updateData.blobUrl = blobUrl
     if (description !== undefined) updateData.description = description
     if (order !== undefined) updateData.order = order
     if (isActive !== undefined) updateData.isActive = isActive

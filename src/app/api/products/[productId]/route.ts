@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb'
 import Product, { IProduct } from '@/models/Product'
 import User from '@/models/User'
 import AccountItem from '@/models/AccountItem'
+import { getImageUrl } from '@/lib/imageUtils'
 
 export async function GET(
   request: NextRequest,
@@ -50,6 +51,16 @@ export async function GET(
       status: 'available'
     })
 
+    // Process images with proper URL handling
+    const processedImages = (product.images || []).map(imagePath => {
+      // If it's already a full URL, return as-is
+      if (imagePath.startsWith('http')) {
+        return imagePath
+      }
+      // Convert legacy path to proper URL using imageUtils
+      return getImageUrl({ image: imagePath })
+    })
+
     // Transform the product data to match the expected format
     const transformedProduct = {
       _id: product._id,
@@ -60,7 +71,7 @@ export async function GET(
       quantity: product.quantity,
       soldCount: product.soldCount,
       category: product.category,
-      images: product.images || [],
+      images: processedImages,
       status: product.status,
       createdAt: product.createdAt,
       rating: product.rating || 0,
