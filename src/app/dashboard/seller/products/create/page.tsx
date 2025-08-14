@@ -52,6 +52,8 @@ export default function CreateProductPage() {
   const [accountFormat, setAccountFormat] = useState('')
   const [fieldNames, setFieldNames] = useState<string[]>(['email', 'password'])
   const [showFormatHelper, setShowFormatHelper] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [isProcessingFile, setIsProcessingFile] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -182,6 +184,87 @@ export default function CreateProductPage() {
     } else {
       toast.error('Không có dữ liệu hợp lệ để import')
     }
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Kiểm tra định dạng file
+    const allowedTypes = ['text/plain', 'text/csv', 'application/csv']
+    const fileExtension = file.name.toLowerCase().split('.').pop()
+    
+    if (!allowedTypes.includes(file.type) && !['txt', 'csv'].includes(fileExtension || '')) {
+      toast.error('Chỉ chấp nhận file .txt hoặc .csv')
+      event.target.value = ''
+      return
+    }
+
+    if (fieldNames.length === 0) {
+      toast.error('Vui lòng định nghĩa format tài khoản trước khi upload file')
+      event.target.value = ''
+      return
+    }
+
+    setIsProcessingFile(true)
+    setUploadedFile(file)
+
+    try {
+      const text = await file.text()
+      const lines = text.trim().split('\n')
+      const newAccounts: Account[] = []
+      const errors: string[] = []
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (line) {
+          // Xử lý cả định dạng CSV (dấu phẩy) và TXT (dấu |)
+          const separator = file.name.toLowerCase().endsWith('.csv') ? ',' : '|'
+          const parts = line.split(separator).map(part => part.trim())
+          
+          if (parts.length !== fieldNames.length) {
+            errors.push(`Dòng ${i + 1}: Số trường không khớp (cần ${fieldNames.length}, có ${parts.length})`)
+            continue
+          }
+          
+          if (parts.some(part => !part)) {
+            errors.push(`Dòng ${i + 1}: Tất cả các trường phải có dữ liệu`)
+            continue
+          }
+          
+          // Chuyển đổi về định dạng | cho consistency
+          const formattedData = parts.join('|')
+          newAccounts.push({
+            data: formattedData,
+            fields: [...fieldNames]
+          })
+        }
+      }
+
+      if (errors.length > 0) {
+        toast.error(`Có ${errors.length} lỗi trong file:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...' : ''}`)
+        return
+      }
+
+      if (newAccounts.length > 0) {
+        setAccounts(newAccounts)
+        setFormData(prev => ({ ...prev, quantity: newAccounts.length.toString() }))
+        setShowBulkInput(false)
+        toast.success(`Đã import ${newAccounts.length} tài khoản từ file ${file.name}`)
+      } else {
+        toast.error('Không có dữ liệu hợp lệ trong file')
+      }
+    } catch (error) {
+      console.error('Error reading file:', error)
+      toast.error('Lỗi đọc file. Vui lòng kiểm tra định dạng file.')
+    } finally {
+      setIsProcessingFile(false)
+      event.target.value = '' // Reset input
+    }
+  }
+
+  const removeUploadedFile = () => {
+    setUploadedFile(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -551,34 +634,90 @@ export default function CreateProductPage() {
                       </div>
                     </div>
                   )}
-                  <textarea
-                    value={bulkInput}
-                    onChange={(e) => setBulkInput(e.target.value)}
-                    rows={8}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white font-mono text-sm"
-                    placeholder={fieldNames.length > 0 ? 
-                      fieldNames.map((field, index) => 
-                        `${field}${index + 1}`
-                      ).join('|') + '\n' +
-                      fieldNames.map((field, index) => 
-                        `${field}${index + 2}`
-                      ).join('|') + '\n' +
-                      fieldNames.map((field, index) => 
-                        `${field}${index + 3}`
-                      ).join('|')
-                      : 'Vui lòng định nghĩa format trước'
-                    }
-                    disabled={fieldNames.length === 0}
-                  />
+                  
+                  {/* File Upload Section */}
+                  <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium text-blue-800">Tải file lên (TXT/CSV)</h4>
+                      {uploadedFile && (
+                        <button
+                          type="button"
+                          onClick={removeUploadedFile}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          <XMarkIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    
+                    {!uploadedFile ? (
+                      <div className="flex items-center space-x-3">
+                        <label className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer transition-colors">
+                          <DocumentTextIcon className="w-4 h-4 mr-2" />
+                          Chọn file
+                          <input
+                            type="file"
+                            accept=".txt,.csv"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                            disabled={fieldNames.length === 0 || isProcessingFile}
+                          />
+                        </label>
+                        <span className="text-sm text-gray-600">
+                          Hỗ trợ file .txt (phân cách bằng |) và .csv (phân cách bằng dấu phẩy)
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border">
+                        <DocumentTextIcon className="w-5 h-5 text-blue-500" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{uploadedFile.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {(uploadedFile.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                        {isProcessingFile && (
+                          <div className="text-sm text-blue-600">Đang xử lý...</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Manual Input Section */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Hoặc nhập thủ công:
+                    </label>
+                    <textarea
+                      value={bulkInput}
+                      onChange={(e) => setBulkInput(e.target.value)}
+                      rows={8}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white font-mono text-sm"
+                      placeholder={fieldNames.length > 0 ? 
+                        fieldNames.map((field, index) => 
+                          `${field}${index + 1}`
+                        ).join('|') + '\n' +
+                        fieldNames.map((field, index) => 
+                          `${field}${index + 2}`
+                        ).join('|') + '\n' +
+                        fieldNames.map((field, index) => 
+                          `${field}${index + 3}`
+                        ).join('|')
+                        : 'Vui lòng định nghĩa format trước'
+                      }
+                      disabled={fieldNames.length === 0}
+                    />
+                  </div>
+                  
                   <div className="mt-4 flex space-x-3">
                     <button
                       type="button"
                       onClick={handleBulkImport}
-                      disabled={fieldNames.length === 0}
+                      disabled={fieldNames.length === 0 || (!bulkInput.trim() && !uploadedFile)}
                       className="flex items-center px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-105"
                     >
                       <CloudArrowUpIcon className="w-4 h-4 mr-2" />
-                      Import
+                      Import từ text
                     </button>
                     <button
                       type="button"
