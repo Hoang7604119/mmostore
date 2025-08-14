@@ -25,7 +25,7 @@ interface Review {
 interface ReviewSummary {
   totalReviews: number
   averageRating: number
-  distribution: { rating: number; count: number }[]
+  distribution: { rating: number; count: number; percentage: number }[]
 }
 
 interface ProductReviewsProps {
@@ -212,11 +212,11 @@ export default function ProductReviews({ productId, sellerId }: ProductReviewsPr
                     <div
                       className="bg-yellow-400 h-2 rounded-full"
                       style={{
-                        width: `${summary.totalReviews > 0 ? (item.count / summary.totalReviews) * 100 : 0}%`
+                        width: `${item.percentage || 0}%`
                       }}
                     ></div>
                   </div>
-                  <span className="text-sm text-gray-600 w-8">{item.count}</span>
+                  <span className="text-sm text-gray-600 w-12">{item.count} ({item.percentage || 0}%)</span>
                 </div>
               ))}
             </div>

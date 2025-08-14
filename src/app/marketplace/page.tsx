@@ -86,38 +86,66 @@ export default function MarketplacePage() {
   const [productsPerPage] = useState(12)
   const [productCounts, setProductCounts] = useState<Record<string, number>>({})
   const [productCountsLoaded, setProductCountsLoaded] = useState(false)
+  const [initialized, setInitialized] = useState(false)
+  const [urlProcessed, setUrlProcessed] = useState(false)
 
   useEffect(() => {
     checkAuth()
-    fetchProducts(1)
     fetchProductTypes()
     fetchProductCounts()
   }, [])
 
-
-
-  // Refetch products when filters change
-  useEffect(() => {
-    if (!loading) {
-      setCurrentPage(1)
-      fetchProducts(1)
-    }
-  }, [selectedType, categoryFilter, priceRange, searchTerm])
-
-  // Fetch products when page changes
-  useEffect(() => {
-    if (!loading) {
-      fetchProducts(currentPage)
-    }
-  }, [currentPage])
-
-  // Handle URL query parameter for type
+  // Process URL params
   useEffect(() => {
     const typeParam = searchParams.get('type')
     if (typeParam) {
       setSelectedType(typeParam)
     }
-  }, [searchParams])
+    setUrlProcessed(true)
+  }, [])
+
+  // Set initialized after URL processing and selectedType update
+  useEffect(() => {
+    if (urlProcessed) {
+      setInitialized(true)
+    }
+  }, [urlProcessed, selectedType])
+
+  // Fetch products after initialization
+  useEffect(() => {
+    if (initialized) {
+      fetchProducts(1)
+    }
+  }, [initialized])
+
+
+
+  // Refetch products when filters change
+  useEffect(() => {
+    if (initialized) {
+      setCurrentPage(1)
+      fetchProducts(1)
+    }
+  }, [selectedType, categoryFilter, priceRange, searchTerm, initialized])
+
+  // Fetch products when page changes
+  useEffect(() => {
+    if (initialized) {
+      fetchProducts(currentPage)
+    }
+  }, [currentPage, initialized])
+
+  // Handle URL query parameter changes
+  useEffect(() => {
+    if (initialized) {
+      const typeParam = searchParams.get('type')
+      if (typeParam && typeParam !== selectedType) {
+        setSelectedType(typeParam)
+      } else if (!typeParam && selectedType) {
+        setSelectedType(null)
+      }
+    }
+  }, [searchParams, initialized])
 
   const checkAuth = async () => {
     try {
@@ -132,6 +160,8 @@ export default function MarketplacePage() {
   }
 
   const fetchProducts = async (page: number = currentPage) => {
+    setLoading(true)
+    setProducts([]) // Clear old products immediately
     try {
       const params = new URLSearchParams({
         page: page.toString(),
