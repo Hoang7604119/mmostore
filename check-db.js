@@ -34,7 +34,20 @@ async function checkDatabase() {
               const count = await db.collection(collection.name).countDocuments();
               console.log(`Document count: ${count}`);
               
-              if (count > 0) {
+              if (count > 0 && collection.name === 'producttypes') {
+                const allTypes = await db.collection(collection.name).find({}).sort({ order: 1 }).toArray();
+                console.log('All Product Types:');
+                console.log('==================');
+                
+                allTypes.forEach(type => {
+                  console.log(`Name: ${type.name}`);
+                  console.log(`Display: ${type.displayName}`);
+                  console.log(`BlobUrl: ${type.blobUrl || 'NONE'}`);
+                  console.log(`Image: ${type.image || 'NONE'}`);
+                  console.log(`Order: ${type.order}`);
+                  console.log('---');
+                });
+              } else if (count > 0) {
                 const samples = await db.collection(collection.name).find({}).limit(2).toArray();
                 console.log('Sample documents:');
                 console.log(JSON.stringify(samples, null, 2));

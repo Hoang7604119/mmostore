@@ -35,6 +35,9 @@ PAYOS_CLIENT_ID=e903742c-1c37-416b-9c10-bb7d8af8d765
 PAYOS_API_KEY=98adda5d-2b6a-4acb-8da3-4e30fbee8052
 PAYOS_CHECKSUM_KEY=a51e671a08b1b5356eb2294b823851cf0d21659bbe11bf43c0d3479f55ed21a3
 
+# Vercel Blob Storage (Required for image uploads)
+BLOB_READ_WRITE_TOKEN=your-vercel-blob-token
+
 # Optional: Email Configuration
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
