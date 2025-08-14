@@ -35,20 +35,20 @@ async function releasePendingCredits() {
   }
 }
 
-// Setup cron job chạy mỗi giờ
-cron.schedule('0 * * * *', () => {
+// Setup cron job chạy mỗi ngày vào 17:00 UTC (00:00 GMT+7)
+cron.schedule('0 17 * * *', () => {
   releasePendingCredits()
 }, {
   scheduled: true,
-  timezone: 'Asia/Ho_Chi_Minh'
+  timezone: 'UTC'
 })
 
 // Chạy ngay lần đầu khi start
 releasePendingCredits()
 
-console.log('Cron job đã được setup để giải phóng pending credits mỗi giờ')
-console.log('Timezone: Asia/Ho_Chi_Minh')
-console.log('Schedule: 0 * * * * (mỗi giờ vào phút 0)')
+console.log('Cron job đã được setup để giải phóng pending credits mỗi ngày vào 17:00 UTC')
+console.log('Timezone: UTC')
+console.log('Schedule: 0 17 * * * (mỗi ngày vào 17:00 UTC / 00:00 GMT+7)')
 
 // Giữ process chạy
 process.on('SIGINT', () => {

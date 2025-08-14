@@ -1,8 +1,8 @@
-import { SupabaseStorageService } from './supabaseStorage'
+import { VercelBlobStorageService } from './vercelBlobStorage'
 import { APP_CONFIG } from '@/config/app'
 
 export interface ImageSource {
-  imageUrl?: string // Supabase Storage URL
+  blobUrl?: string // Vercel Blob Storage URL
   image?: string // Legacy file system path
   imageBase64?: string // Base64 encoded image
   name?: string // For fallback display
@@ -10,7 +10,7 @@ export interface ImageSource {
 
 /**
  * Get the best available image URL with fallback logic
- * Priority: imageUrl (Supabase) > imageBase64 > image (file system) > default
+ * Priority: blobUrl (Vercel Blob) > imageBase64 > image (file system) > default
  */
 export function getImageUrl(source?: ImageSource, defaultImage?: string): string {
   // Handle undefined source
@@ -18,9 +18,9 @@ export function getImageUrl(source?: ImageSource, defaultImage?: string): string
     return defaultImage || APP_CONFIG.PRODUCTS?.DEFAULT_IMAGES?.other || '/uploads/other.svg'
   }
 
-  // 1. Priority: Supabase Storage URL
-  if (source.imageUrl && source.imageUrl.trim()) {
-    return source.imageUrl
+  // 1. Priority: Vercel Blob Storage URL
+  if (source.blobUrl && source.blobUrl.trim()) {
+    return source.blobUrl
   }
 
   // 2. Base64 encoded image
@@ -60,23 +60,9 @@ export function getOptimizedImageUrl(
   }
   const baseUrl = getImageUrl(source, defaultImage)
   
-  // Only apply optimization for Supabase URLs
-  if (!SupabaseStorageService.isSupabaseUrl(baseUrl)) {
-    return baseUrl
-  }
-
-  const fileName = SupabaseStorageService.extractFileNameFromUrl(baseUrl)
-  if (!fileName) return baseUrl
-
-  // Define optimization settings for different contexts
-  const optimizations = {
-    thumbnail: { width: 64, height: 64, quality: 80 },
-    card: { width: 200, height: 200, quality: 85 },
-    detail: { width: 400, height: 400, quality: 90 },
-    full: { quality: 95 }
-  }
-
-  return SupabaseStorageService.getOptimizedUrl(fileName, optimizations[context])
+  // For now, return the base URL as-is since we're using Vercel Blob Storage
+  // Vercel Blob doesn't have built-in image optimization like Supabase
+  return baseUrl
 }
 
 /**
@@ -104,7 +90,7 @@ export function getProductTypeImage(
  */
 export function hasValidImage(source?: ImageSource): boolean {
   if (!source) return false
-  return !!(source.imageUrl?.trim() || source.imageBase64?.trim() || source.image?.trim())
+  return !!(source.blobUrl?.trim() || source.imageBase64?.trim() || source.image?.trim())
 }
 
 /**
@@ -161,13 +147,13 @@ export async function migrateLegacyImage(
   entityType: 'product-type' | 'product' = 'product-type'
 ): Promise<{
   success: boolean
-  imageUrl?: string
+  blobUrl?: string
   error?: string
 }> {
   try {
-    // Skip if already using Supabase
-    if (source.imageUrl) {
-      return { success: true, imageUrl: source.imageUrl }
+    // Skip if already using Vercel Blob Storage
+    if (source.blobUrl) {
+      return { success: true, blobUrl: source.blobUrl }
     }
 
     // Skip if no legacy image
@@ -179,7 +165,7 @@ export async function migrateLegacyImage(
     // This would involve:
     // 1. Reading the file from the legacy path
     // 2. Converting it to a File object
-    // 3. Uploading to Supabase Storage
+    // 3. Uploading to Vercel Blob Storage
     // 4. Updating the database record
     
     console.log(`Migration needed for ${entityType} ${entityId}: ${source.image}`)
@@ -200,14 +186,21 @@ export async function migrateLegacyImage(
 
 /**
  * Clean up old image when updating to new one
+ * Supports Vercel Blob Storage (not legacy file system)
  */
 export async function cleanupOldImage(oldImageUrl?: string): Promise<void> {
-  if (!oldImageUrl || !SupabaseStorageService.isSupabaseUrl(oldImageUrl)) {
+  if (!oldImageUrl) {
     return
   }
 
-  const fileName = SupabaseStorageService.extractFileNameFromUrl(oldImageUrl)
-  if (fileName) {
-    await SupabaseStorageService.deleteImage(fileName)
+  try {
+    // Check if it's a Vercel Blob URL
+    if (oldImageUrl.includes('blob.vercel-storage.com')) {
+      await VercelBlobStorageService.deleteImage(oldImageUrl)
+    }
+    // Don't cleanup legacy file system images or other URLs
+  } catch (error) {
+    console.warn('Failed to cleanup old image:', error)
+    // Don't throw error - cleanup failure shouldn't break the main operation
   }
 }

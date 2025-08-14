@@ -14,17 +14,17 @@ export async function GET(request: NextRequest) {
     // Lấy chỉ những product types đang active
     const productTypes = await ProductType.find({ isActive: true })
       .sort({ order: 1, displayName: 1 })
-      .select('name displayName color image imageUrl description order')
+      .select('name displayName color image blobUrl description order')
     
     // Process images with unified logic
     const productTypesWithImages = await Promise.all(
       productTypes.map(async (type) => {
         const typeObj = type.toObject()
         
-        // Priority: imageUrl (Supabase) > image (legacy file system)
-        if (typeObj.imageUrl) {
-          // Supabase Storage URL - use directly
-          typeObj.finalImageUrl = typeObj.imageUrl
+        // Priority: blobUrl (Vercel Blob) > image (legacy file system)
+        if (typeObj.blobUrl) {
+          // Vercel Blob Storage URL - use directly
+          typeObj.finalImageUrl = typeObj.blobUrl
         } else if (typeObj.image) {
           // Legacy file system image - convert to base64 for backward compatibility
           try {

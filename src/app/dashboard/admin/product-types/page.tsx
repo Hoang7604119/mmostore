@@ -17,7 +17,7 @@ import {
 import { UserData } from '@/types/user'
 import Header from '@/components/Header'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { getProductTypeImage, hasValidImage, getFallbackDisplay } from '@/lib/imageUtils'
+import { getProductTypeImage, hasValidImage, getFallbackDisplay, cleanupOldImage } from '@/lib/imageUtils'
 
 
 
@@ -28,7 +28,7 @@ interface ProductType {
   icon: string
   color: string
   image?: string
-  imageUrl?: string
+  blobUrl?: string
   imageBase64?: string
   finalImageUrl?: string
   description?: string
@@ -43,7 +43,7 @@ interface ProductTypeForm {
   displayName: string
   color: string
   image: string
-  imageUrl: string
+  blobUrl: string
   description: string
   order: number
 }
@@ -60,7 +60,7 @@ export default function AdminProductTypesPage() {
     displayName: '',
     color: '#3B82F6',
     image: '',
-    imageUrl: '',
+    blobUrl: '',
     description: '',
     order: 0
   })
@@ -120,41 +120,24 @@ export default function AdminProductTypesPage() {
       uploadFormData.append('file', file)
       uploadFormData.append('fileName', `product-type-${formData.name || Date.now()}.${file.name.split('.').pop()}`)
 
-      // Try Supabase Storage first
-      const response = await fetch('/api/upload/supabase', {
+      // Upload to Vercel Blob Storage
+      const blobResponse = await fetch('/api/upload/vercel-blob', {
         method: 'POST',
         credentials: 'include',
         body: uploadFormData
       })
 
-      if (response.ok) {
-        const data = await response.json()
+      if (blobResponse.ok) {
+        const data = await blobResponse.json()
         setFormData(prev => ({ 
           ...prev, 
-          imageUrl: data.url,
+          blobUrl: data.url,
           image: '' // Clear legacy image field
         }))
         alert('Upload ảnh thành công!')
       } else {
-        // Fallback to legacy upload
-        const legacyResponse = await fetch('/api/upload', {
-          method: 'POST',
-          credentials: 'include',
-          body: uploadFormData
-        })
-        
-        if (legacyResponse.ok) {
-          const data = await legacyResponse.json()
-          setFormData(prev => ({ 
-            ...prev, 
-            image: data.url,
-            imageUrl: '' // Clear Supabase field
-          }))
-          alert('Upload ảnh thành công (legacy)!')
-        } else {
-          const errorData = await response.json()
-          alert(`Lỗi upload: ${errorData.error}`)
-        }
+        const errorData = await blobResponse.json()
+        alert(`Lỗi upload: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Upload error:', error)
@@ -168,6 +151,16 @@ export default function AdminProductTypesPage() {
     e.preventDefault()
     
     try {
+      // If editing and there's a new image, cleanup old image first
+      if (editingType && formData.blobUrl && editingType.blobUrl && formData.blobUrl !== editingType.blobUrl) {
+        try {
+          await cleanupOldImage(editingType.blobUrl)
+        } catch (error) {
+          console.warn('Failed to cleanup old image:', error)
+          // Continue with the update even if cleanup fails
+        }
+      }
+
       const url = editingType 
         ? '/api/admin/product-types'
         : '/api/admin/product-types'
@@ -208,7 +201,7 @@ export default function AdminProductTypesPage() {
       displayName: productType.displayName,
       color: productType.color,
       image: productType.image || '',
-      imageUrl: productType.imageUrl || '',
+      blobUrl: productType.blobUrl || '',
       description: productType.description || '',
       order: productType.order
     })
@@ -221,12 +214,24 @@ export default function AdminProductTypesPage() {
     }
 
     try {
+      // Find the product type to get its image URL for cleanup
+      const productTypeToDelete = productTypes.find(pt => pt._id === id)
+      
       const response = await fetch(`/api/admin/product-types?id=${id}`, {
         method: 'DELETE',
         credentials: 'include'
       })
       
       if (response.ok) {
+        // Cleanup image after successful deletion
+        if (productTypeToDelete?.blobUrl) {
+          try {
+            await cleanupOldImage(productTypeToDelete.blobUrl)
+          } catch (error) {
+            console.warn('Failed to cleanup image after deletion:', error)
+          }
+        }
+        
         const data = await response.json()
         alert(data.message)
         await fetchProductTypes()
@@ -277,7 +282,7 @@ export default function AdminProductTypesPage() {
       displayName: '',
       color: '#3B82F6',
       image: '',
-      imageUrl: '',
+      blobUrl: '',
       description: '',
       order: 0
     })
@@ -399,20 +404,20 @@ export default function AdminProductTypesPage() {
                      )}
                     <input
                       type="text"
-                      value={formData.imageUrl}
-                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value, image: '' })}
+                      value={formData.blobUrl}
+                      onChange={(e) => setFormData({ ...formData, blobUrl: e.target.value, image: '' })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Hoặc nhập URL ảnh Supabase..."
+                      placeholder="Hoặc nhập URL ảnh Vercel Blob..."
                     />
                     <input
                       type="text"
                       value={formData.image}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value, imageUrl: '' })}
+                      onChange={(e) => setFormData({ ...formData, image: e.target.value, blobUrl: '' })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Hoặc nhập đường dẫn ảnh legacy..."
                     />
                     <div className="mt-2">
-                      {(formData.imageUrl || formData.image) ? (
+                      {(formData.blobUrl || formData.image) ? (
                         <img 
                           src={getProductTypeImage(formData, 'thumbnail')} 
                           alt="Preview" 

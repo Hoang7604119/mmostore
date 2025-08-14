@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/utils'
-import { SupabaseStorageService } from '@/lib/supabaseStorage'
+import { VercelBlobStorageService } from '@/lib/vercelBlobStorage'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * POST - Upload image to Supabase Storage
+ * POST - Upload image to Vercel Blob Storage
  * Only accessible by admin users
  */
 export async function POST(request: NextRequest) {
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upload to Supabase Storage
-    const result = await SupabaseStorageService.uploadImage(file, customFileName)
+    // Upload to Vercel Blob Storage
+    const result = await VercelBlobStorageService.uploadImage(file, customFileName)
 
     if (!result.success) {
       return NextResponse.json(
@@ -52,13 +52,13 @@ export async function POST(request: NextRequest) {
       { 
         message: 'Upload thành công',
         url: result.url,
-        fileName: SupabaseStorageService.extractFileNameFromUrl(result.url || '')
+        fileName: VercelBlobStorageService.extractFileNameFromUrl(result.url || '')
       },
       { status: 200 }
     )
 
   } catch (error) {
-    console.error('Supabase upload error:', error)
+    console.error('Vercel Blob upload error:', error)
     return NextResponse.json(
       { error: 'Lỗi server, vui lòng thử lại' },
       { status: 500 }
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * DELETE - Delete image from Supabase Storage
+ * DELETE - Delete image from Vercel Blob Storage
  * Only accessible by admin users
  */
 export async function DELETE(request: NextRequest) {
@@ -90,25 +90,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const fileName = searchParams.get('fileName')
     const url = searchParams.get('url')
 
-    let fileNameToDelete = fileName
-    
-    // Extract filename from URL if provided
-    if (!fileNameToDelete && url) {
-      fileNameToDelete = SupabaseStorageService.extractFileNameFromUrl(url)
-    }
-
-    if (!fileNameToDelete) {
+    if (!url) {
       return NextResponse.json(
-        { error: 'Tên file hoặc URL là bắt buộc' },
+        { error: 'URL là bắt buộc' },
         { status: 400 }
       )
     }
 
-    // Delete from Supabase Storage
-    const result = await SupabaseStorageService.deleteImage(fileNameToDelete)
+    // Delete from Vercel Blob Storage
+    const result = await VercelBlobStorageService.deleteImage(url)
 
     if (!result.success) {
       return NextResponse.json(
@@ -123,7 +115,7 @@ export async function DELETE(request: NextRequest) {
     )
 
   } catch (error) {
-    console.error('Supabase delete error:', error)
+    console.error('Vercel Blob delete error:', error)
     return NextResponse.json(
       { error: 'Lỗi server, vui lòng thử lại' },
       { status: 500 }

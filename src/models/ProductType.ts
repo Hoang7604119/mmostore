@@ -7,7 +7,7 @@ export interface IProductType extends Document {
   icon: string
   color: string
   image?: string // Legacy field for file system images
-  imageUrl?: string // New field for Supabase Storage URLs
+  blobUrl?: string // Vercel Blob Storage URL
   description?: string
   isActive: boolean
   order: number
@@ -48,7 +48,7 @@ const ProductTypeSchema = new Schema<IProductType>({
     type: String,
     trim: true
   },
-  imageUrl: {
+  blobUrl: {
     type: String,
     trim: true
   },

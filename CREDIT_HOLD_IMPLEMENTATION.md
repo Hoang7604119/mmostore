@@ -61,8 +61,8 @@ node scripts/setup-cron.js
 #### Cách 2: Sử dụng System Cron (Linux/Mac)
 Thêm vào crontab:
 ```bash
-# Chạy mỗi giờ
-0 * * * * curl -X POST -H "Authorization: Bearer your-cron-secret" http://localhost:3000/api/cron/release-credits
+# Chạy mỗi ngày vào 17:00 UTC (do giới hạn của Vercel)
+0 17 * * * curl -X POST -H "Authorization: Bearer your-cron-secret" http://localhost:3000/api/cron/release-credits
 ```
 
 #### Cách 3: Sử dụng Vercel Cron (Production)
@@ -72,11 +72,13 @@ Tạo file `vercel.json`:
   "crons": [
     {
       "path": "/api/cron/release-credits",
-      "schedule": "0 * * * *"
+      "schedule": "0 17 * * *"
     }
   ]
 }
 ```
+
+**Lưu ý:** Do giới hạn của Vercel, cron job chỉ có thể chạy một lần mỗi ngày vào 17:00 UTC (00:00 GMT+7).
 
 ### Bước 5: Kiểm Tra Hoạt Động
 
@@ -183,7 +185,7 @@ db.pendingcredits.createIndex({"createdAt": -1})
 
 2. **Pagination:** API đã implement pagination để tránh load quá nhiều data
 
-3. **Cron Frequency:** Mặc định chạy mỗi giờ, có thể điều chỉnh tùy nhu cầu
+3. **Cron Frequency:** Do giới hạn của Vercel, chỉ có thể chạy một lần mỗi ngày vào 17:00 UTC (00:00 GMT+7)
 
 ## Future Enhancements
 
