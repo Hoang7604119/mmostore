@@ -5,7 +5,15 @@ import ProductType from '@/models/ProductType'
 import fs from 'fs'
 import path from 'path'
 
+export async function GET(request: NextRequest) {
+  return await migrateImages()
+}
+
 export async function POST(request: NextRequest) {
+  return await migrateImages()
+}
+
+async function migrateImages() {
   try {
     console.log('Starting image migration...')
     await connectDB()
