@@ -3,77 +3,40 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ShoppingCart, Search, Filter, Star, Package, User, LogOut, ArrowLeft, Grid, List, MessageCircle } from 'lucide-react'
+import { ShoppingCart, Search, Filter, Star, Package, User as UserIcon, LogOut, ArrowLeft, Grid, List, MessageCircle } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import Pagination from '@/components/ui/Pagination'
+import { ProductSkeletons } from '@/components/ProductCardSkeleton'
+import { useProducts, useInfiniteProducts } from '@/hooks/useInfiniteProducts'
+import { useProductTypes } from '@/hooks/useProductTypes'
+import { useSearchDebounce } from '@/hooks/useDebounce'
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
+import { useScrollRestoration } from '@/hooks/useScrollRestoration'
+import { useFilterPersistence } from '@/hooks/useFilterPersistence'
+import { useProgressiveLoading, loadingPresets } from '@/hooks/useProgressiveLoading'
+import { SmartLoadingIndicator, InlineLoadingIndicator } from '@/components/ui/SmartLoadingIndicator'
+import { InfiniteScrollContainer } from '@/components/ui/InfiniteScrollContainer'
 import { CONTACT_INFO } from '@/config/contact'
 import { getProductTypeImage, hasValidImage, getFallbackDisplay } from '@/lib/imageUtils'
-
-interface Product {
-  _id: string
-  type: string
-  title: string
-  description: string
-  pricePerUnit: number
-  quantity: number
-  soldCount: number
-  category: string
-  status: 'pending' | 'approved' | 'rejected' | 'sold_out'
-  createdAt: string
-  seller: {
-    _id: string
-    username: string
-    email: string
-    rating?: number
-  }
-  availableCount?: number
-  totalAccountItems?: number
-}
-
-interface User {
-  _id: string
-  username: string
-  email: string
-  role: 'admin' | 'manager' | 'seller' | 'buyer'
-  credit: number
-  isActive: boolean
-}
-
-interface ProductType {
-  _id: string
-  name: string
-  displayName: string
-  description?: string
-  icon?: string
-  color: string
-  image?: string
-  imageUrl?: string
-  imageBase64?: string
-  finalImageUrl?: string
-  order: number
-}
-
-interface PaginationInfo {
-  currentPage: number
-  totalPages: number
-  totalProducts: number
-  limit: number
-  hasNextPage: boolean
-  hasPrevPage: boolean
-}
+import type { Product, User, ProductType, PaginationInfo } from '@/types/shared'
 
 export default function MarketplacePage() {
   const searchParams = useSearchParams()
+  
+  // User state
   const [user, setUser] = useState<User | null>(null)
-  const [products, setProducts] = useState<Product[]>([])
-  const [productTypes, setProductTypes] = useState<ProductType[]>([])
-  const [loading, setLoading] = useState(true)
+  
+  // Filter states
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
+  const [currentPage, setCurrentPage] = useState(1)
+  const [productsPerPage] = useState(12)
+  
+  // UI states
   const [typeSearchTerm, setTypeSearchTerm] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [purchasing, setPurchasing] = useState(false)
@@ -81,71 +44,93 @@ export default function MarketplacePage() {
   const [purchaseQuantity, setPurchaseQuantity] = useState(1)
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [productToPurchase, setProductToPurchase] = useState<Product | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
-  const [productsPerPage] = useState(12)
+  
+  // Legacy states for product counts (will be refactored later)
   const [productCounts, setProductCounts] = useState<Record<string, number>>({})
   const [productCountsLoaded, setProductCountsLoaded] = useState(false)
   const [initialized, setInitialized] = useState(false)
-  const [urlProcessed, setUrlProcessed] = useState(false)
 
+  
+  // Use debounced search
+  const { debouncedSearchTerm, isSearching } = useSearchDebounce(searchTerm, 300)
+  
+  // Use React Query infinite scroll hooks
+  const { 
+    products, 
+    pagination, 
+    isLoading: productsLoading, 
+    error: productsError,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch: refetchProducts 
+  } = useInfiniteProducts({
+    productType: selectedType || undefined,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    minPrice: priceRange.min ? parseFloat(priceRange.min) : undefined,
+    maxPrice: priceRange.max ? parseFloat(priceRange.max) : undefined,
+    search: debouncedSearchTerm || undefined,
+    limit: productsPerPage
+  })
+  
+  const { 
+    productTypes, 
+    isLoading: productTypesLoading, 
+    error: productTypesError 
+  } = useProductTypes()
+
+  // Setup Supabase realtime updates
+  const { isConnected: realtimeConnected } = useSupabaseRealtime()
+
+  // Setup scroll position restoration
+  const { scrollToTop, scrollToElement } = useScrollRestoration({
+    key: 'marketplace-scroll',
+    enabled: true,
+    debounceMs: 100
+  })
+
+  // Setup filter state persistence
+  const { updateFilters, resetFilters } = useFilterPersistence({
+    key: 'marketplace-filters',
+    enabled: true,
+    syncWithUrl: true
+  })
+
+  // Setup progressive loading
+  const progressiveLoading = useProgressiveLoading({
+    stages: loadingPresets.pageLoad,
+    autoProgress: false
+  })
+
+  // Auth check effect
   useEffect(() => {
     checkAuth()
-    fetchProductTypes()
-    fetchProductCounts()
+    fetchProductCounts() // Keep this for now until we refactor product counts
   }, [])
 
-  // Process URL params
+  // Handle URL params and initialization in a single effect to avoid race conditions
   useEffect(() => {
     const typeParam = searchParams.get('type')
-    if (typeParam) {
+    
+    // Set selectedType based on URL param
+    if (typeParam && typeParam !== selectedType) {
       setSelectedType(typeParam)
+    } else if (!typeParam && selectedType) {
+      setSelectedType(null)
     }
-    setUrlProcessed(true)
-  }, [])
-
-  // Set initialized after URL processing and selectedType update
-  useEffect(() => {
-    if (urlProcessed) {
+    
+    // Mark as initialized after first run
+    if (!initialized) {
       setInitialized(true)
     }
-  }, [urlProcessed, selectedType])
+  }, [searchParams, selectedType, initialized])
 
-  // Fetch products after initialization
-  useEffect(() => {
-    if (initialized) {
-      fetchProducts(1)
-    }
-  }, [initialized])
-
-
-
-  // Refetch products when filters change
+  // Reset to page 1 when filters change
   useEffect(() => {
     if (initialized) {
       setCurrentPage(1)
-      fetchProducts(1)
     }
-  }, [selectedType, categoryFilter, priceRange, searchTerm, initialized])
-
-  // Fetch products when page changes
-  useEffect(() => {
-    if (initialized) {
-      fetchProducts(currentPage)
-    }
-  }, [currentPage, initialized])
-
-  // Handle URL query parameter changes
-  useEffect(() => {
-    if (initialized) {
-      const typeParam = searchParams.get('type')
-      if (typeParam && typeParam !== selectedType) {
-        setSelectedType(typeParam)
-      } else if (!typeParam && selectedType) {
-        setSelectedType(null)
-      }
-    }
-  }, [searchParams, initialized])
+  }, [selectedType, categoryFilter, priceRange, debouncedSearchTerm, initialized])
 
   const checkAuth = async () => {
     try {
@@ -159,49 +144,7 @@ export default function MarketplacePage() {
     }
   }
 
-  const fetchProducts = async (page: number = currentPage) => {
-    setLoading(true)
-    setProducts([]) // Clear old products immediately
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: productsPerPage.toString()
-      })
-      
-      if (selectedType) params.append('type', selectedType)
-      if (categoryFilter !== 'all') params.append('category', categoryFilter)
-      if (priceRange.min) params.append('minPrice', priceRange.min)
-      if (priceRange.max) params.append('maxPrice', priceRange.max)
-      if (searchTerm) params.append('search', searchTerm)
-      
-      const response = await fetch(`/api/buyer/products?${params.toString()}`, {
-        credentials: 'include'
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data.products)
-        setPagination(data.pagination)
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchProductTypes = async () => {
-    try {
-      const response = await fetch('/api/product-types-with-images')
-      
-      if (response.ok) {
-        const data = await response.json()
-        setProductTypes(data.productTypes)
-      }
-    } catch (error) {
-      console.error('Error fetching product types:', error)
-    }
-  }
+  // Removed fetchProducts and fetchProductTypes - now handled by React Query hooks
 
   const fetchProductCounts = async () => {
     try {
@@ -219,10 +162,9 @@ export default function MarketplacePage() {
     }
   }
 
-  const handlePageChange = async (newPage: number) => {
+  const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage)
-    setLoading(true)
-    await fetchProducts(newPage)
+    // React Query will automatically refetch when currentPage changes
   }
 
 
@@ -296,7 +238,7 @@ export default function MarketplacePage() {
   const handlePurchase = async () => {
     if (!user || !productToPurchase) return
 
-    const totalAmount = productToPurchase.pricePerUnit * purchaseQuantity
+    const totalAmount = productToPurchase.price * purchaseQuantity
     if (user.credit < totalAmount) {
       alert(`❌ Không đủ credit. Bạn có ${user.credit.toLocaleString('vi-VN')} VNĐ, cần ${totalAmount.toLocaleString('vi-VN')} VNĐ`)
       return
@@ -327,9 +269,9 @@ export default function MarketplacePage() {
         alert(`🎉 Mua thành công ${purchaseQuantity} tài khoản!\n\n${accountsInfo}\n\nSố credit còn lại: ${data.order?.remainingCredit?.toLocaleString('vi-VN') || '0'} VNĐ`)
         
         // Update user credit in state
-        setUser(prev => prev ? { ...prev, credit: data.order?.remainingCredit || 0 } : null)
+        setUser((prev: User | null) => prev ? { ...prev, credit: data.order?.remainingCredit || 0 } : null)
         
-        fetchProducts() // Refresh products
+        refetchProducts() // Refresh products
         fetchProductCounts() // Refresh product counts
         setSelectedProduct(null)
         setShowPurchaseModal(false)
@@ -365,7 +307,7 @@ export default function MarketplacePage() {
     return colorMap[hexColor] || { bg: 'bg-gray-50', text: 'text-gray-700' }
   }
 
-  if (loading) {
+  if (productsLoading) {
     return <LoadingSpinner />
   }
 
@@ -474,7 +416,7 @@ export default function MarketplacePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
               {productTypes
                 .filter(type => 
-                  type.displayName.toLowerCase().includes(typeSearchTerm.toLowerCase()) ||
+                  (type.displayName || type.name).toLowerCase().includes(typeSearchTerm.toLowerCase()) ||
                   type.name.toLowerCase().includes(typeSearchTerm.toLowerCase()) ||
                   (type.description && type.description.toLowerCase().includes(typeSearchTerm.toLowerCase()))
                 )
@@ -484,7 +426,7 @@ export default function MarketplacePage() {
                 return (
                   <div
                     key={type._id}
-                    onClick={() => setSelectedType(type.name)}
+                    onClick={() => updateFilters({ selectedType: type.name })}
                     className="group relative bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-8 cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 overflow-hidden"
                   >
                     {/* Background gradient overlay */}
@@ -577,7 +519,7 @@ export default function MarketplacePage() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 lg:mb-8 space-y-4 lg:space-y-0">
               <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
-                  onClick={() => setSelectedType(null)}
+                  onClick={() => updateFilters({ selectedType: '' })}
                   className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-blue-600 hover:bg-blue-50 transition-all duration-200 shadow-sm touch-manipulation w-fit"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
@@ -704,31 +646,21 @@ export default function MarketplacePage() {
             </div>
 
             {/* Products Grid/List */}
-            {loading ? (
+            {(productsLoading || isSearching) ? (
               /* Loading Skeleton */
               <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="bg-gradient-to-br from-white to-blue-50/30 rounded-2xl shadow-lg border border-blue-100/50 p-6 animate-pulse backdrop-blur-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="h-6 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-full w-16 shadow-sm"></div>
-                      <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg w-12 shadow-sm"></div>
-                    </div>
-                    <div className="h-6 bg-gradient-to-r from-blue-200 to-purple-200 rounded-xl w-3/4 mb-2 shadow-sm"></div>
-                    <div className="h-4 bg-gradient-to-r from-gray-200 to-blue-200 rounded-lg w-full mb-3 shadow-sm"></div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="h-4 bg-gradient-to-r from-green-200 to-emerald-200 rounded-lg w-20 shadow-sm"></div>
-                      <div className="h-4 bg-gradient-to-r from-orange-200 to-red-200 rounded-lg w-16 shadow-sm"></div>
-                    </div>
-                    <div className="h-8 bg-gradient-to-r from-purple-200 to-pink-200 rounded-xl w-24 mb-4 shadow-sm"></div>
-                    <div className="space-y-2">
-                      <div className="h-10 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-xl shadow-sm"></div>
-                      <div className="h-10 bg-gradient-to-r from-green-200 to-blue-200 rounded-xl shadow-sm"></div>
-                    </div>
-                  </div>
+                {Array.from({ length: productsPerPage }).map((_, index) => (
+                  <ProductSkeletons key={index} viewMode={viewMode} />
                 ))}
               </div>
             ) : (
-              <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
+              <InfiniteScrollContainer
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                fetchNextPage={fetchNextPage}
+                error={productsError}
+                className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}
+              >
                 {products.map((product) => {
                   const typeInfo = productTypes.find(t => t.name === product.type)
                   return (
@@ -806,12 +738,12 @@ export default function MarketplacePage() {
                             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                  {Number(product.pricePerUnit || 0).toLocaleString('vi-VN')} Credit
+                                  {Number(product.price || 0).toLocaleString('vi-VN')} Credit
                                 </div>
                                 <div className="text-right">
                                   <div className="text-sm text-gray-600">Còn lại</div>
                                   <div className="text-lg font-semibold text-green-600">
-                                    {product.availableCount || (product.quantity - product.soldCount)}
+                                    {product.availableCount || (product.quantity - (product.soldCount || 0))}
                                   </div>
                                 </div>
                               </div>
@@ -821,7 +753,7 @@ export default function MarketplacePage() {
                                 <div 
                                   className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-300"
                                   style={{
-                                    width: `${Math.min(100, ((product.availableCount || (product.quantity - product.soldCount)) / product.quantity) * 100)}%`
+                                    width: `${Math.min(100, ((product.availableCount || (product.quantity - (product.soldCount || 0))) / product.quantity) * 100)}%`
                                   }}
                                 ></div>
                               </div>
@@ -830,7 +762,7 @@ export default function MarketplacePage() {
                               </div>
                               
                               {/* No accounts warning */}
-                              {product.totalAccountItems === 0 && (
+                              {(product.availableCount || (product.quantity - (product.soldCount || 0))) === 0 && (
                                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                   <div className="flex items-center text-yellow-800">
                                     <span className="text-sm">⚠️ Sản phẩm đang được chuẩn bị tài khoản</span>
@@ -869,13 +801,13 @@ export default function MarketplacePage() {
                               {product.status !== 'sold_out' && user && (
                                 <button
                                   onClick={() => handlePurchaseClick(product)}
-                                  disabled={purchasing || product.totalAccountItems === 0}
+                                  disabled={purchasing || (product.availableCount || (product.quantity - (product.soldCount || 0))) === 0}
                                   className="w-full px-4 py-3 rounded-xl transition-all duration-200 font-semibold transform hover:scale-[1.02] flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 touch-manipulation"
                                 >
                                   <span>
                                     {purchasing 
                                       ? '⏳ Đang xử lý...' 
-                                      : product.totalAccountItems === 0
+                                      : (product.availableCount || (product.quantity - (product.soldCount || 0))) === 0
                                       ? '⏳ Đang chuẩn bị tài khoản'
                                       : '🛒 Chọn số lượng & Mua'
                                     }
@@ -946,19 +878,19 @@ export default function MarketplacePage() {
                                 
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                   <div className="flex items-center">
-                                    <User className="h-4 w-4 mr-1" />
+                                    <UserIcon className="h-4 w-4 mr-1" />
                                     <span>{product.seller?.username || 'Unknown'}</span>
                                   </div>
                                   <div className="flex items-center">
                                     <Package className="h-4 w-4 mr-1" />
-                                    <span>{product.availableCount || (product.quantity - product.soldCount)} còn lại</span>
+                                    <span>{product.availableCount || (product.quantity - (product.soldCount || 0))} còn lại</span>
                                   </div>
                                 </div>
                               </div>
                               
                               <div className="text-right ml-4">
                                 <div className="text-xl font-bold text-blue-600 mb-2">
-                                  {Number(product.pricePerUnit || 0).toLocaleString('vi-VN')} Credit
+                                  {Number(product.price || 0).toLocaleString('vi-VN')} Credit
                                 </div>
                                 
                                 <div className="space-y-2">
@@ -974,12 +906,12 @@ export default function MarketplacePage() {
                                   {product.status !== 'sold_out' && user && (
                                     <button
                                       onClick={() => handlePurchaseClick(product)}
-                                      disabled={purchasing || product.totalAccountItems === 0}
+                                      disabled={purchasing || (product.availableCount || (product.quantity - (product.soldCount || 0))) === 0}
                                       className="w-full px-4 py-2 rounded-lg transition-colors text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                                     >
                                       {purchasing 
                                         ? 'Đang xử lý...' 
-                                        : product.totalAccountItems === 0
+                                        : (product.availableCount || (product.quantity - (product.soldCount || 0))) === 0
                                         ? 'Đang chuẩn bị'
                                         : 'Chọn số lượng & Mua'
                                       }
@@ -1002,16 +934,16 @@ export default function MarketplacePage() {
                     </div>
                   )
                 })}
-              </div>
+              </InfiniteScrollContainer>
             )}
             
-            {!loading && products.length === 0 && (
+            {!productsLoading && products.length === 0 && (
               <div className="text-center py-12">
                 <Package className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-lg font-medium text-gray-900">Không có sản phẩm nào</h3>
-                <p className="mt-1 text-sm text-gray-500">Không tìm thấy sản phẩm phù hợp với bộ lọc của bạn trong loại {productTypes.find(t => t.name === selectedType)?.displayName}.</p>
+                <p className="mt-1 text-sm text-gray-500">Không tìm thấy sản phẩm phù hợp với bộ lọc của bạn trong loại {productTypes.find(t => t.name === selectedType)?.name}.</p>
                 <button
-                  onClick={() => setSelectedType(null)}
+                  onClick={() => updateFilters({ selectedType: '' })}
                   className="mt-4 text-blue-600 hover:text-blue-800 text-sm font-medium"
                 >
                   ← Quay lại chọn loại khác
@@ -1019,16 +951,7 @@ export default function MarketplacePage() {
               </div>
             )}
 
-            {/* Pagination */}
-            {!loading && products.length > 0 && pagination && pagination.totalPages > 1 && (
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
-                onPageChange={handlePageChange}
-                itemsPerPage={pagination.limit}
-                totalItems={pagination.totalProducts}
-              />
-            )}
+            {/* No pagination needed with infinite scroll */}
           </div>
         )}
       </div>
@@ -1081,7 +1004,7 @@ export default function MarketplacePage() {
                   <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-xl border border-yellow-200">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Giá mỗi tài khoản</label>
                     <p className="text-lg font-bold text-orange-600">
-                      {Number(selectedProduct.pricePerUnit || 0).toLocaleString('vi-VN')} Credit
+                      {Number(selectedProduct.price || 0).toLocaleString('vi-VN')} Credit
                     </p>
                   </div>
                   <div className="bg-white/80 p-4 rounded-xl border border-gray-200 shadow-sm">
@@ -1091,7 +1014,7 @@ export default function MarketplacePage() {
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Còn lại</label>
                     <p className="text-lg font-bold text-green-600">
-                      {selectedProduct.availableCount || (selectedProduct.quantity - selectedProduct.soldCount)}
+                      {selectedProduct.availableCount || (selectedProduct.quantity - (selectedProduct.soldCount || 0))}
                     </p>
                   </div>
                 </div>
@@ -1164,7 +1087,7 @@ export default function MarketplacePage() {
                       <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-gray-100">
                         <img
                           src={getProductTypeImage(productType)}
-                          alt={productType.displayName}
+                          alt={productType.name}
                           className="w-12 h-12 object-contain"
                         />
                       </div>
@@ -1183,10 +1106,10 @@ export default function MarketplacePage() {
                 <div>
                   <h4 className="font-medium">{productToPurchase.title}</h4>
                   <p className="text-sm text-gray-600">
-                    {Number(productToPurchase.pricePerUnit || 0).toLocaleString()} Credit/sản phẩm
+                    {Number(productToPurchase.price || 0).toLocaleString()} Credit/sản phẩm
                   </p>
                   <p className="text-sm text-gray-600">
-                    Còn lại: {productToPurchase.availableCount || (productToPurchase.quantity - productToPurchase.soldCount)} sản phẩm
+                    Còn lại: {productToPurchase.availableCount || (productToPurchase.quantity - (productToPurchase.soldCount || 0))} sản phẩm
                   </p>
                 </div>
               </div>
@@ -1207,22 +1130,22 @@ export default function MarketplacePage() {
                 <input
                   type="number"
                   min="1"
-                  max={productToPurchase.availableCount || (productToPurchase.quantity - productToPurchase.soldCount)}
+                  max={productToPurchase.availableCount || (productToPurchase.quantity - (productToPurchase.soldCount || 0))}
                   value={purchaseQuantity}
                   onChange={(e) => {
                     const value = parseInt(e.target.value) || 1;
-                    const maxQuantity = productToPurchase.availableCount || (productToPurchase.quantity - productToPurchase.soldCount);
+                    const maxQuantity = productToPurchase.availableCount || (productToPurchase.quantity - (productToPurchase.soldCount || 0));
                     setPurchaseQuantity(Math.min(Math.max(1, value), maxQuantity));
                   }}
                   className="w-20 text-center border border-gray-300 rounded-md px-2 py-1"
                 />
                 <button
                   onClick={() => {
-                    const maxQuantity = productToPurchase.availableCount || (productToPurchase.quantity - productToPurchase.soldCount);
+                    const maxQuantity = productToPurchase.availableCount || (productToPurchase.quantity - (productToPurchase.soldCount || 0));
                     setPurchaseQuantity(Math.min(maxQuantity, purchaseQuantity + 1));
                   }}
                   className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
-                  disabled={purchaseQuantity >= (productToPurchase.availableCount || (productToPurchase.quantity - productToPurchase.soldCount))}
+                  disabled={purchaseQuantity >= (productToPurchase.availableCount || (productToPurchase.quantity - (productToPurchase.soldCount || 0)))}
                 >
                   +
                 </button>
@@ -1233,16 +1156,16 @@ export default function MarketplacePage() {
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Tổng tiền:</span>
                 <span className="font-semibold">
-                  {(productToPurchase.pricePerUnit * purchaseQuantity).toLocaleString()} Credit
+                  {(productToPurchase.price * purchaseQuantity).toLocaleString()} Credit
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Credit hiện tại:</span>
-                <span className={(user?.credit || 0) >= (productToPurchase.pricePerUnit * purchaseQuantity) ? 'text-green-600' : 'text-red-600'}>
+                <span className={(user?.credit || 0) >= (productToPurchase.price * purchaseQuantity) ? 'text-green-600' : 'text-red-600'}>
                   {(user?.credit || 0).toLocaleString()} Credit
                 </span>
               </div>
-              {user && user.credit < (productToPurchase.pricePerUnit * purchaseQuantity) && (
+              {user && user.credit < (productToPurchase.price * purchaseQuantity) && (
                 <p className="text-red-600 text-sm mt-2">
                   ⚠️ Không đủ credit để mua {purchaseQuantity} sản phẩm
                 </p>
@@ -1258,7 +1181,7 @@ export default function MarketplacePage() {
               </button>
               <button
                 onClick={() => handlePurchase()}
-                disabled={purchasing || !user || user.credit < (productToPurchase.pricePerUnit * purchaseQuantity)}
+                disabled={purchasing || !user || user.credit < (productToPurchase.price * purchaseQuantity)}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {purchasing ? 'Đang xử lý...' : 'Xác nhận mua'}

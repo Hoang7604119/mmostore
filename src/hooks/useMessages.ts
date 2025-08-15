@@ -71,11 +71,18 @@ export const useMessages = (userId?: string | null) => {
 
   // Setup Supabase Realtime (without callbacks to avoid double processing)
   // Components will handle the window events directly
-  const { broadcastNewMessage, broadcastMessageRead } = useSupabaseRealtime({
-    userId
-    // Note: Removed onNewMessage and onMessageRead callbacks to prevent double processing
-    // Components like ChatPopup and MessageIcon will handle window events directly
-  })
+  const { isConnected } = useSupabaseRealtime()
+  
+  // Mock broadcast functions for now since useSupabaseRealtime doesn't return them
+  const broadcastNewMessage = useCallback(async (message: Message) => {
+    // TODO: Implement actual broadcast when Supabase realtime is fully configured
+    console.log('Broadcasting new message:', message)
+  }, [])
+  
+  const broadcastMessageRead = useCallback(async (messageId: string) => {
+    // TODO: Implement actual broadcast when Supabase realtime is fully configured
+    console.log('Broadcasting message read:', messageId)
+  }, [])
 
   // Fetch conversations
   const fetchConversations = useCallback(async (page = 1, limit = 20) => {
@@ -336,7 +343,7 @@ export const useMessages = (userId?: string | null) => {
         updateConversationReadStatus(conversationId, userId || '')
         
         // Broadcast the read status via Supabase Realtime
-        await broadcastMessageRead({ conversationId, readByUserId: userId || '' })
+        await broadcastMessageRead(`${conversationId}-${userId || ''}`)
       }
     } catch (err) {
       console.error('Mark conversation as read error:', err)

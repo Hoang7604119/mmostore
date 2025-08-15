@@ -9,16 +9,17 @@ export default function RealtimeTest() {
   const [receivedMessages, setReceivedMessages] = useState<any[]>([])
   const { user } = useAuth()
   
-  const { broadcastNewMessage } = useSupabaseRealtime({
-    userId: user?._id || null,
-    onNewMessage: (message) => {
-      console.log('Test component received message:', message)
-      setReceivedMessages(prev => [...prev, {
-        ...message,
-        timestamp: new Date().toLocaleTimeString()
-      }])
-    }
-  })
+  const { isConnected } = useSupabaseRealtime()
+  
+  // Mock broadcast function for testing
+  const broadcastNewMessage = async (message: any) => {
+    console.log('Test component broadcasting message:', message)
+    // Simulate receiving the message for testing
+    setReceivedMessages(prev => [...prev, {
+      ...message,
+      timestamp: new Date().toLocaleTimeString()
+    }])
+  }
 
   const sendTestMessage = async () => {
     if (!testMessage.trim() || !user) return

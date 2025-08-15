@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Marketplace Filters</title>
+</head>
+<body>
+    <h1>Clear Marketplace Filters</h1>
+    <button onclick="clearFilters()">Clear localStorage Filters</button>
+    <div id="result"></div>
+    
+    <script>
+        function clearFilters() {
+            try {
+                // Clear the specific marketplace filters
+                localStorage.removeItem('marketplace-filters');
+                
+                // Also clear any other related keys
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.includes('marketplace')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                
+                document.getElementById('result').innerHTML = 
+                    '<p style="color: green;">✅ Cleared localStorage filters: ' + 
+                    (keysToRemove.length > 0 ? keysToRemove.join(', ') : 'marketplace-filters') + 
+                    '</p><p>Now try accessing <a href="http://localhost:3001/marketplace">marketplace</a></p>';
+                    
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+        
+        // Show current localStorage content
+        window.onload = function() {
+            const filters = localStorage.getItem('marketplace-filters');
+            if (filters) {
+                document.getElementById('result').innerHTML = 
+                    '<p><strong>Current filters in localStorage:</strong></p><pre>' + 
+                    JSON.stringify(JSON.parse(filters), null, 2) + '</pre>';
+            } else {
+                document.getElementById('result').innerHTML = 
+                    '<p>No marketplace filters found in localStorage</p>';
+            }
+        }
+    </script>
+</body>
+</html>

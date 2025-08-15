@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
     const skip = (page - 1) * limit
+    
+
 
     // Build query for approved products only
     const query: any = { status: 'approved' }
@@ -46,9 +48,13 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+
+    
     // Get total count for pagination
     const totalProducts = await Product.countDocuments(query)
     const totalPages = Math.ceil(totalProducts / limit)
+    
+
 
     // Get products with seller info and pagination
     const products = await Product.find(query)
@@ -61,6 +67,8 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit)
       .lean()
+      
+
 
     // Get available account counts
     const productsWithAvailability = await Promise.all(
@@ -121,7 +129,7 @@ export async function GET(request: NextRequest) {
     // Show all approved products, including those without account items yet
     const availableProducts = productsWithAvailability
 
-    return NextResponse.json({ 
+    const response = {
       products: availableProducts,
       pagination: {
         currentPage: page,
@@ -131,10 +139,15 @@ export async function GET(request: NextRequest) {
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1
       }
-    }, { status: 200 })
+    }
+    
+
+    
+    return NextResponse.json(response, { status: 200 })
 
   } catch (error) {
-    console.error('Get buyer products error:', error)
+    console.error('❌ [DEBUG API] Get buyer products error:', error)
+    console.error('❌ [DEBUG API] Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { error: 'Lỗi server, vui lòng thử lại' },
       { status: 500 }

@@ -18,11 +18,16 @@ if (!cached) {
 }
 
 async function connectDB() {
+
+  
   if (cached.conn) {
+
     return cached.conn
   }
 
   if (!cached.promise) {
+
+    
     const opts = {
       bufferCommands: false,
     }
@@ -31,9 +36,12 @@ async function connectDB() {
   }
 
   try {
+
     const mongoose = await cached.promise
     cached.conn = mongoose
+
   } catch (e) {
+    console.error('❌ [DEBUG DB] MongoDB connection failed:', e)
     cached.promise = null
     throw e
   }

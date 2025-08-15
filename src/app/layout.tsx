@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import ClientWrapper from '@/components/ClientWrapper'
+import QueryProvider from '@/components/QueryProvider'
 import { CONTACT_INFO } from '@/config/contact'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/react'
@@ -106,11 +107,13 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className={inter.className}>
-        <ClientWrapper>
-          <div className="min-h-screen bg-background flex flex-col">
-            {children}
-          </div>
-        </ClientWrapper>
+        <QueryProvider>
+          <ClientWrapper>
+            <div className="min-h-screen bg-background flex flex-col">
+              {children}
+            </div>
+          </ClientWrapper>
+        </QueryProvider>
         <SpeedInsights />
         <Analytics />
       </body>
