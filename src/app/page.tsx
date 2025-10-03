@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart, Users, Shield, Star, LogOut, User } from 'lucide-react'
 import { UserData } from '@/types/user'
+import { useAuth } from '@/hooks/useAuth'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -17,37 +18,8 @@ interface UserWithCredit extends UserData {
 }
 
 export default function HomePage() {
-  const [user, setUser] = useState<UserWithCredit | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading, logout } = useAuth()
   const router = useRouter()
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/me')
-        if (response.ok) {
-          const data = await response.json()
-          setUser(data.user)
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkAuth()
-  }, [])
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-      setUser(null)
-      window.location.href = '/'
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-  }
 
   const getDashboardLink = () => {
     if (!user) return '/dashboard'
@@ -72,7 +44,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {user && <Header user={user} onLogout={handleLogout} />}
+      {user && <Header user={user} onLogout={logout} />}
       
       {!user && (
         <header className="bg-gradient-to-r from-white via-blue-50/30 to-white shadow-xl border-b border-blue-100/50 backdrop-blur-xl">

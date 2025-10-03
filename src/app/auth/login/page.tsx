@@ -1,15 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
-  // Set page title
-  useEffect(() => {
-    document.title = 'Đăng nhập - MMO Store'
-  }, [])
   const [formData, setFormData] = useState({
     email: '',
     password: ''

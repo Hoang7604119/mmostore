@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useEffect } from 'react'
 import { useSearchDebounce } from './useDebounce'
 import type { Product, PaginationInfo, ProductsResponse, UseProductsParams } from '@/types/shared'
@@ -74,7 +74,8 @@ export function useInfiniteProducts(params: UseProductsParams = {}) {
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    placeholderData: keepPreviousData,
+    // Remove placeholderData to prevent showing wrong products when filters change
+    // placeholderData: keepPreviousData,
   })
   
   // Flatten all products from all pages with deduplication
@@ -167,7 +168,8 @@ export function useProducts(params: UseProductsParams = {}) {
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    placeholderData: keepPreviousData,
+    // Remove placeholderData to prevent showing wrong products when filters change
+    // placeholderData: keepPreviousData,
   })
   
   // Prefetch next page when current page loads successfully

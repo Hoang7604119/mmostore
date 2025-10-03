@@ -1,42 +1,59 @@
 # Kế hoạch cải thiện UX cho Marketplace
 
 ## Tổng quan
-Dựa trên phân tích PROMPT_IMPROVEMENT_PLAN.md và code hiện tại trong marketplace/page.tsx, tài liệu này đưa ra kế hoạch chi tiết để cải thiện trải nghiệm người dùng, loại bỏ các vấn đề về race condition, mất đồng bộ dữ liệu và tối ưu performance.
+
+Dựa trên phân tích PROMPT\_IMPROVEMENT\_PLAN.md và code hiện tại trong marketplace/page.tsx, tài liệu này đưa ra kế hoạch chi tiết để cải thiện trải nghiệm người dùng, loại bỏ các vấn đề về race condition, mất đồng bộ dữ liệu và tối ưu performance.
 
 ## Phân tích vấn đề hiện tại
 
 ### 🔍 Các vấn đề đã phát hiện trong marketplace/page.tsx:
 
 1. **Filter & Search không có debounce**
-   - Mỗi lần thay đổi searchTerm, categoryFilter, priceRange đều gọi API ngay lập tức
-   - Gây ra nhiều request không cần thiết khi user typing
-   - Có thể xảy ra race condition khi response trả về không đúng thứ tự
+
+   * Mỗi lần thay đổi searchTerm, categoryFilter, priceRange đều gọi API ngay lập tức
+
+   * Gây ra nhiều request không cần thiết khi user typing
+
+   * Có thể xảy ra race condition khi response trả về không đúng thứ tự
 
 2. **Không có client-side caching**
-   - Mỗi lần filter/pagination đều fetch lại từ server
-   - Không prefetch trang tiếp theo
-   - Không cache product types và product counts
+
+   * Mỗi lần filter/pagination đều fetch lại từ server
+
+   * Không prefetch trang tiếp theo
+
+   * Không cache product types và product counts
 
 3. **Loading UX kém**
-   - `setProducts([])` clear toàn bộ products khi loading
-   - Không có skeleton loading cho từng product card
-   - Loading che toàn bộ grid thay vì loading từng phần
+
+   * `setProducts([])` clear toàn bộ products khi loading
+
+   * Không có skeleton loading cho từng product card
+
+   * Loading che toàn bộ grid thay vì loading từng phần
 
 4. **Không có realtime updates**
-   - Không sync trạng thái sản phẩm realtime
-   - Không đồng bộ giữa các tab/browser
-   - Product counts không update realtime
+
+   * Không sync trạng thái sản phẩm realtime
+
+   * Không đồng bộ giữa các tab/browser
+
+   * Product counts không update realtime
 
 5. **State management phức tạp**
-   - Quá nhiều useEffect dependencies
-   - Logic initialization phức tạp với urlProcessed, initialized
-   - Có thể xảy ra infinite re-render
+
+   * Quá nhiều useEffect dependencies
+
+   * Logic initialization phức tạp với urlProcessed, initialized
+
+   * Có thể xảy ra infinite re-render
 
 ## Kế hoạch cải thiện theo MCP
 
 ### 🎯 MCP 1: Debounce & Filter Control
 
 #### Vấn đề hiện tại:
+
 ```javascript
 // Trong marketplace/page.tsx - lines 120-125
 useEffect(() => {
@@ -48,11 +65,13 @@ useEffect(() => {
 ```
 
 #### Giải pháp:
+
 1. **Implement debounce cho search**
+
    ```javascript
    const [searchTerm, setSearchTerm] = useState('')
    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
-   
+
    useEffect(() => {
      const timer = setTimeout(() => {
        setDebouncedSearchTerm(searchTerm)
@@ -62,10 +81,11 @@ useEffect(() => {
    ```
 
 2. **Prevent duplicate requests**
+
    ```javascript
    const [isFiltering, setIsFiltering] = useState(false)
    const lastRequestRef = useRef(null)
-   
+
    const fetchProducts = useCallback(async (params) => {
      if (isFiltering) return // Prevent concurrent requests
      
@@ -86,20 +106,25 @@ useEffect(() => {
    ```
 
 3. **Smart loading states**
-   - Giữ lại dữ liệu cũ khi filter
-   - Chỉ show loading indicator nhỏ
-   - Skeleton loading cho new products
+
+   * Giữ lại dữ liệu cũ khi filter
+
+   * Chỉ show loading indicator nhỏ
+
+   * Skeleton loading cho new products
 
 ### 🎯 MCP 2: Client-side Caching với SWR/React Query
 
 #### Implementation Plan:
 
 1. **Setup React Query**
+
    ```bash
    npm install @tanstack/react-query
    ```
 
 2. **Create query hooks**
+
    ```javascript
    // hooks/useProducts.ts
    export const useProducts = (filters) => {
@@ -111,7 +136,7 @@ useEffect(() => {
        keepPreviousData: true, // Keep old data while fetching new
      })
    }
-   
+
    export const useProductTypes = () => {
      return useQuery({
        queryKey: ['productTypes'],
@@ -122,9 +147,10 @@ useEffect(() => {
    ```
 
 3. **Prefetch next page**
+
    ```javascript
    const queryClient = useQueryClient()
-   
+
    useEffect(() => {
      // Prefetch next page when user scrolls to 80% of current page
      if (pagination?.hasNextPage) {
@@ -137,6 +163,7 @@ useEffect(() => {
    ```
 
 4. **Cache invalidation strategy**
+
    ```javascript
    // Invalidate when user purchases
    const purchaseMutation = useMutation({
@@ -153,6 +180,7 @@ useEffect(() => {
 #### Implementation Plan:
 
 1. **Setup Supabase realtime**
+
    ```javascript
    // hooks/useRealtimeProducts.ts
    export const useRealtimeProducts = () => {
@@ -188,6 +216,7 @@ useEffect(() => {
    ```
 
 2. **Cross-tab synchronization**
+
    ```javascript
    // hooks/useCrossTabSync.ts
    export const useCrossTabSync = () => {
@@ -210,6 +239,7 @@ useEffect(() => {
    ```
 
 3. **Optimistic updates**
+
    ```javascript
    const purchaseMutation = useMutation({
      mutationFn: purchaseProduct,
@@ -244,6 +274,7 @@ useEffect(() => {
 #### Implementation Plan:
 
 1. **Lazy loading images**
+
    ```javascript
    // components/LazyImage.tsx
    const LazyImage = ({ src, alt, fallback, className }) => {
@@ -281,6 +312,7 @@ useEffect(() => {
    ```
 
 2. **Skeleton loading components**
+
    ```javascript
    // components/ProductCardSkeleton.tsx
    const ProductCardSkeleton = () => (
@@ -301,6 +333,7 @@ useEffect(() => {
    ```
 
 3. **Progressive loading strategy**
+
    ```javascript
    const ProductGrid = () => {
      const { data, isLoading, isFetching } = useProducts(filters)
@@ -334,6 +367,7 @@ useEffect(() => {
 #### Implementation Plan:
 
 1. **Scroll position restoration**
+
    ```javascript
    // hooks/useScrollRestoration.ts
    export const useScrollRestoration = (key) => {
@@ -354,6 +388,7 @@ useEffect(() => {
    ```
 
 2. **Filter state persistence**
+
    ```javascript
    // hooks/useFilterState.ts
    export const useFilterState = () => {
@@ -371,6 +406,7 @@ useEffect(() => {
    ```
 
 3. **Smart loading indicators**
+
    ```javascript
    const LoadingOverlay = ({ isVisible, message }) => (
      <div className={`fixed top-4 right-4 z-50 transition-all duration-300 ${
@@ -389,6 +425,7 @@ useEffect(() => {
 #### Implementation Plan:
 
 1. **Add lastUpdated field**
+
    ```javascript
    // API response should include:
    {
@@ -400,6 +437,7 @@ useEffect(() => {
    ```
 
 2. **Conditional requests**
+
    ```javascript
    const fetchProducts = async (filters, etag) => {
      const headers = {}
@@ -417,6 +455,7 @@ useEffect(() => {
    ```
 
 3. **Infinite scroll support**
+
    ```javascript
    // hooks/useInfiniteProducts.ts
    export const useInfiniteProducts = (filters) => {
@@ -432,64 +471,101 @@ useEffect(() => {
 ## Timeline Implementation
 
 ### Phase 1 (Week 1): Foundation
-- [ ] Setup React Query
-- [ ] Implement debounce for search
-- [ ] Create basic caching structure
-- [ ] Add loading skeletons
+
+* [ ] Setup React Query
+
+* [ ] Implement debounce for search
+
+* [ ] Create basic caching structure
+
+* [ ] Add loading skeletons
 
 ### Phase 2 (Week 2): Caching & Performance
-- [ ] Implement product caching
-- [ ] Add prefetching logic
-- [ ] Optimize image loading
-- [ ] Implement scroll restoration
+
+* [ ] Implement product caching
+
+* [ ] Add prefetching logic
+
+* [ ] Optimize image loading
+
+* [ ] Implement scroll restoration
 
 ### Phase 3 (Week 3): Realtime & Sync
-- [ ] Setup Supabase realtime
-- [ ] Implement cross-tab sync
-- [ ] Add optimistic updates
-- [ ] Test race condition scenarios
+
+* [ ] Setup Supabase realtime
+
+* [ ] Implement cross-tab sync
+
+* [ ] Add optimistic updates
+
+* [ ] Test race condition scenarios
 
 ### Phase 4 (Week 4): Polish & Testing
-- [ ] Backend API improvements
-- [ ] Infinite scroll implementation
-- [ ] Performance testing
-- [ ] Bug fixes and optimization
+
+* [ ] Backend API improvements
+
+* [ ] Infinite scroll implementation
+
+* [ ] Performance testing
+
+* [ ] Bug fixes and optimization
 
 ## Success Metrics
 
 1. **Performance**
-   - Reduce API calls by 60% through caching
-   - Improve perceived loading time by 40%
-   - Eliminate race conditions
+
+   * Reduce API calls by 60% through caching
+
+   * Improve perceived loading time by 40%
+
+   * Eliminate race conditions
 
 2. **User Experience**
-   - Smooth filtering without flickering
-   - Instant navigation between cached pages
-   - Real-time product updates
-   - Consistent state across tabs
+
+   * Smooth filtering without flickering
+
+   * Instant navigation between cached pages
+
+   * Real-time product updates
+
+   * Consistent state across tabs
 
 3. **Technical**
-   - Zero memory leaks
-   - Proper error handling
-   - Comprehensive test coverage
-   - Clean code architecture
+
+   * Zero memory leaks
+
+   * Proper error handling
+
+   * Comprehensive test coverage
+
+   * Clean code architecture
 
 ## Risk Mitigation
 
 1. **Backward Compatibility**
-   - Implement changes incrementally
-   - Feature flags for new functionality
-   - Fallback to old behavior on errors
+
+   * Implement changes incrementally
+
+   * Feature flags for new functionality
+
+   * Fallback to old behavior on errors
 
 2. **Performance Monitoring**
-   - Add performance metrics
-   - Monitor bundle size
-   - Track API response times
+
+   * Add performance metrics
+
+   * Monitor bundle size
+
+   * Track API response times
 
 3. **Testing Strategy**
-   - Unit tests for hooks
-   - Integration tests for user flows
-   - E2E tests for critical paths
-   - Performance regression tests
+
+   * Unit tests for hooks
+
+   * Integration tests for user flows
+
+   * E2E tests for critical paths
+
+   * Performance regression tests
 
 Việc implementation sẽ được thực hiện theo từng phase, đảm bảo mỗi bước đều được test kỹ lưỡng trước khi chuyển sang bước tiếp theo.
